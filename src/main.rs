@@ -1,33 +1,78 @@
 use iced::widget::{Column, button, center, container, text};
-use iced::{Element, Padding};
+use iced::{Element, Padding, Task};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::fs::File;
+use std::io::Write;
+
+const CONFIG_JSON: &'static str = "workouts.json";
 
 fn main() -> iced::Result {
+    if let Err(error) = maybe_create_initial_workouts_json() {
+        println!("{}", error);
+        std::process::exit(1);
+    }
+
+    let read_result = read_workouts_json();
+    if let Err(error) = read_result {
+        println!("{}", error);
+        std::process::exit(2);
+    }
+
+    let workouts_state = read_result.unwrap();
+    if let Err(error) = validate_workouts_state(&workouts_state) {
+        println!("{}", error);
+        std::process::exit(3);
+    }
+
+    let app = App {
+        workouts: workouts_state.workouts,
+        index: workouts_state.index,
+    };
+
     iced::application("Workout Iterator", App::update, App::view)
         .window_size((500.0, 300.0))
         .resizable(false)
-        .run()
+        .run_with(|| (app, Task::none()))
+}
+
+fn maybe_create_initial_workouts_json() -> Result<(), std::io::Error> {
+    if fs::exists(CONFIG_JSON)? {
+        return Ok(());
+    }
+
+    let mut file = File::create(CONFIG_JSON)?;
+    let buffer = serde_json::to_vec(&WorkoutsState::default())?;
+    file.write_all(&buffer)?;
+
+    Ok(())
+}
+
+fn read_workouts_json() -> Result<WorkoutsState, std::io::Error> {
+    let buffer = fs::read(CONFIG_JSON)?;
+
+    Ok(serde_json::from_slice(&buffer)?)
+}
+
+fn validate_workouts_state(workouts_state: &WorkoutsState) -> Result<(), &'static str> {
+    let count = workouts_state.workouts.iter().count() as i8;
+    match workouts_state.index {
+        i if i < 0 || (count > 0 && i >= count) => Err("invalid workouts.json: index out of range"),
+        _ => Ok(()),
+    }
 }
 
 struct App {
-    workouts: Vec<&'static str>,
-    index: usize,
-}
-
-impl Default for App {
-    fn default() -> Self {
-        let workouts = vec![
-            "Lorem ipsum dolor sit amet, consetetur sadipscing",
-            "Workout 2",
-        ];
-
-        App { workouts, index: 0 }
-    }
+    index: i8,
+    workouts: Vec<String>,
 }
 
 impl App {
     fn update(&mut self, message: Message) {
         match message {
-            Message::NextWorkout => self.index = (self.index + 1) % self.workouts.iter().count(),
+            Message::NextWorkout => {
+                self.index = (self.index + 1) % self.workouts.iter().count() as i8
+            }
             _ => return,
         }
     }
@@ -36,10 +81,15 @@ impl App {
         let center_width = 250.0;
         let center_height = 100.0;
 
-        let workout_txt =
-            center(text(*self.workouts.iter().nth(self.index).unwrap_or(&"")).size(28))
-                .width(center_width)
-                .height(center_height);
+        let workout = self
+            .workouts
+            .iter()
+            .nth(self.index as usize)
+            .unwrap_or(&"<empty>".to_owned())
+            .clone();
+        let workout_txt = center(text(workout).size(28))
+            .width(center_width)
+            .height(center_height);
         let next_btn = center(
             button("Next")
                 .on_press(Message::NextWorkout)
@@ -57,4 +107,10 @@ impl App {
 enum Message {
     NextWorkout,
     AddWorkoutSelected,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct WorkoutsState {
+    index: i8,
+    workouts: Vec<String>,
 }
