@@ -71,7 +71,10 @@ impl App {
     fn update(&mut self, message: Message) {
         match message {
             Message::NextWorkout => {
-                self.index = (self.index + 1) % self.workouts.iter().count() as i8
+                let count = self.workouts.iter().count() as i8;
+                if count > 0 {
+                    self.index = (self.index + 1) % count;
+                }
             }
             _ => return,
         }
@@ -92,7 +95,11 @@ impl App {
             .height(center_height);
         let next_btn = center(
             button("Next")
-                .on_press(Message::NextWorkout)
+                .on_press_maybe(if self.workouts.iter().count() > 0 {
+                    Some(Message::NextWorkout)
+                } else {
+                    None
+                })
                 .padding(Padding::from([16.0, 28.0])),
         )
         .width(center_width)
