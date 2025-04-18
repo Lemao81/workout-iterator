@@ -1,9 +1,21 @@
-use iced::widget::{Column, button, center, container, text};
+use crate::ui::create_header;
+use iced::widget::{button, center, container, text, Column};
 use iced::{Element, Padding, Task};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+
+mod ui {
+    use crate::Message;
+    use iced::widget::{button, Container, Row};
+
+    pub fn create_header<'a>() -> Container<'a, Message> {
+        let settings_btn = button("S");
+
+        Container::new(Row::new().push(settings_btn))
+    }
+}
 
 const CONFIG_JSON: &'static str = "workouts.json";
 
@@ -93,6 +105,7 @@ impl App {
         let workout_txt = center(text(workout).size(28))
             .width(center_width)
             .height(center_height);
+
         let next_btn = center(
             button("Next")
                 .on_press_maybe(if self.workouts.iter().count() > 0 {
@@ -104,7 +117,12 @@ impl App {
         )
         .width(center_width)
         .height(center_height);
-        let column = Column::with_children(vec![workout_txt.into(), next_btn.into()]);
+
+        let column = Column::with_children(vec![
+            create_header().into(),
+            workout_txt.into(),
+            next_btn.into(),
+        ]);
 
         container(center(column)).into()
     }
