@@ -6,7 +6,8 @@ pub fn create_view<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Messa
     Container::new(
         Column::new()
             .push(create_header())
-            .push(create_body(workouts, index)),
+            .push(create_body(workouts, index))
+            .push(create_footer()),
     )
 }
 
@@ -42,4 +43,8 @@ fn create_body<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> 
     .height(center_height);
 
     Container::new(center(Column::new().push(workout_txt).push(next_btn)))
+}
+
+fn create_footer<'a>() -> Container<'a, Message> {
+    Container::new(Row::new())
 }
