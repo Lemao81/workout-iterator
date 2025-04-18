@@ -20,7 +20,7 @@ fn create_header<'a>() -> Container<'a, Message> {
         Row::new().push(horizontal_space()).push(settings_btn),
     ))
     .height(50)
-    .padding(Padding::from(5.0));
+    .padding(Padding::from([5.0, 10.0]));
 
     if is_ui_dev() {
         container = set_container_background(container, Color::from_rgb8(255, 0, 0));
@@ -71,7 +71,7 @@ fn create_footer<'a>() -> Container<'a, Message> {
             .push(text("x from x"))
             .push(horizontal_space()),
     ))
-    .padding(Padding::from(5.0))
+    .padding(Padding::from([5.0, 10.0]))
     .height(40);
 
     if is_ui_dev() {
