@@ -28,13 +28,15 @@ struct App {
 impl App {
     fn update(&mut self, message: Message) {
         match message {
-            Message::NextWorkout => {
-                let count = self.workouts.iter().count() as i8;
-                if count > 0 {
-                    self.index = (self.index + 1) % count;
-                }
-            }
+            Message::NextWorkout => self.on_next_workout(),
             _ => return,
+        }
+    }
+
+    fn on_next_workout(&mut self) {
+        let count = self.workouts.iter().count() as i8;
+        if count > 0 {
+            self.index = (self.index + 1) % count;
         }
     }
 
