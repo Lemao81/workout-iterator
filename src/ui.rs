@@ -1,6 +1,8 @@
 use crate::Message;
-use iced::Padding;
+use crate::helper::is_ui_dev;
+use iced::widget::container::Style;
 use iced::widget::{Column, Container, Row, button, center, text};
+use iced::{Background, Color, Padding};
 
 pub fn create_view<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> {
     Container::new(
@@ -14,7 +16,13 @@ pub fn create_view<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Messa
 fn create_header<'a>() -> Container<'a, Message> {
     let settings_btn = button("S");
 
-    Container::new(Row::new().push(settings_btn))
+    let mut container = Container::new(Row::new().push(settings_btn)).height(50);
+
+    if is_ui_dev() {
+        container = set_container_background(container, Color::from_rgb8(255, 0, 0));
+    }
+
+    container
 }
 
 fn create_body<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> {
@@ -42,9 +50,25 @@ fn create_body<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> 
     .width(center_width)
     .height(center_height);
 
-    Container::new(center(Column::new().push(workout_txt).push(next_btn)))
+    let mut container = Container::new(center(Column::new().push(workout_txt).push(next_btn)));
+
+    if is_ui_dev() {
+        container = set_container_background(container, Color::from_rgb8(0, 255, 0));
+    }
+
+    container
 }
 
 fn create_footer<'a>() -> Container<'a, Message> {
-    Container::new(Row::new())
+    let mut container = Container::new(Row::new()).height(40);
+
+    if is_ui_dev() {
+        container = set_container_background(container, Color::from_rgb8(0, 0, 255));
+    }
+
+    container
+}
+
+fn set_container_background(container: Container<Message>, color: Color) -> Container<Message> {
+    container.style(move |_| Style::default().background(Background::Color(color)))
 }
