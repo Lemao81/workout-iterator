@@ -1,13 +1,12 @@
-mod ui;
 mod helper;
+mod ui;
 
-use crate::ui::create_view;
+use crate::ui::{ViewModel, create_view};
 use iced::{Element, Task};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-
 
 const CONFIG_JSON: &'static str = "workouts.json";
 
@@ -85,7 +84,23 @@ impl App {
     }
 
     fn view(&self) -> Element<Message> {
-        create_view(&self.workouts, self.index).into()
+        let workout = self
+            .workouts
+            .iter()
+            .nth(self.index as usize)
+            .unwrap_or(&"<empty>".to_owned())
+            .clone();
+        let total = self.workouts.iter().count();
+        let has_next = total > 1;
+        let selected_number = if total == 0 { 0 } else { self.index + 1 };
+
+        create_view(ViewModel {
+            workout,
+            has_next,
+            selected_number,
+            total,
+        })
+        .into()
     }
 }
 

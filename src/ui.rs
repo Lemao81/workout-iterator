@@ -4,12 +4,19 @@ use iced::widget::container::Style;
 use iced::widget::{Column, Container, Row, button, center, horizontal_space, text};
 use iced::{Background, Color, Padding};
 
-pub fn create_view<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> {
+pub struct ViewModel {
+    pub workout: String,
+    pub has_next: bool,
+    pub selected_number: i8,
+    pub total: usize,
+}
+
+pub fn create_view<'a>(view_model: ViewModel) -> Container<'a, Message> {
     Container::new(
         Column::new()
             .push(create_header())
-            .push(create_body(workouts, index))
-            .push(create_footer()),
+            .push(create_body(view_model.workout, view_model.has_next))
+            .push(create_footer(view_model.selected_number, view_model.total)),
     )
 }
 
@@ -29,22 +36,17 @@ fn create_header<'a>() -> Container<'a, Message> {
     container
 }
 
-fn create_body<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> {
+fn create_body<'a>(workout: String, has_next: bool) -> Container<'a, Message> {
     let center_width = 250.0;
     let center_height = 100.0;
-
-    let workout = workouts
-        .iter()
-        .nth(index as usize)
-        .unwrap_or(&"<empty>".to_owned())
-        .clone();
+    
     let workout_txt = center(text(workout).size(28))
         .width(center_width)
         .height(center_height);
 
     let next_btn = center(
         button("Next")
-            .on_press_maybe(if workouts.iter().count() > 0 {
+            .on_press_maybe(if has_next {
                 Some(Message::NextWorkout)
             } else {
                 None
@@ -64,11 +66,11 @@ fn create_body<'a>(workouts: &Vec<String>, index: i8) -> Container<'a, Message> 
     container
 }
 
-fn create_footer<'a>() -> Container<'a, Message> {
+fn create_footer<'a>(number: i8, total: usize) -> Container<'a, Message> {
     let mut container = Container::new(center(
         Row::new()
             .padding(Padding::from(5.0))
-            .push(text("x from x"))
+            .push(text(format!("{} from {}", number, total)))
             .push(horizontal_space()),
     ))
     .padding(Padding::from([5.0, 10.0]))
