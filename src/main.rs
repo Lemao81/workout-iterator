@@ -2,7 +2,9 @@ mod helper;
 mod persistence;
 mod ui;
 
+use crate::helper::modal;
 use crate::persistence::read_workouts_state;
+use crate::ui::settings_page::create_settings_page;
 use crate::ui::{ViewModel, create_view};
 use iced::{Element, Task};
 use serde::{Deserialize, Serialize};
@@ -12,6 +14,7 @@ fn main() -> iced::Result {
     let app = App {
         workouts: workouts_state.workouts,
         index: workouts_state.index,
+        show_settings_modal: false
     };
 
     iced::application("Workout Iterator", App::update, App::view)
@@ -23,12 +26,14 @@ fn main() -> iced::Result {
 struct App {
     index: i8,
     workouts: Vec<String>,
+    show_settings_modal: bool,
 }
 
 impl App {
     fn update(&mut self, message: Message) {
         match message {
             Message::NextWorkout => self.on_next_workout(),
+            Message::OpenSettings => self.on_open_settings(),
             _ => return,
         }
     }
@@ -38,6 +43,10 @@ impl App {
         if count > 0 {
             self.index = (self.index + 1) % count;
         }
+    }
+
+    fn on_open_settings(&mut self) {
+        self.show_settings_modal = true;
     }
 
     fn view(&self) -> Element<Message> {
@@ -51,20 +60,26 @@ impl App {
         let has_next = total > 1;
         let selected_number = if total == 0 { 0 } else { self.index + 1 };
 
-        create_view(ViewModel {
+        let view = create_view(ViewModel {
             workout,
             has_next,
             selected_number,
             total,
         })
-        .into()
+        .into();
+
+        if self.show_settings_modal {
+            modal(view, create_settings_page())
+        } else {
+            view
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     NextWorkout,
-    AddWorkoutSelected,
+    OpenSettings,
 }
 
 #[derive(Serialize, Deserialize, Default)]

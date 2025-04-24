@@ -1,3 +1,5 @@
+pub mod settings_page;
+
 use crate::Message;
 use crate::helper::is_ui_dev;
 use iced::widget::container::Style;
@@ -21,7 +23,7 @@ pub fn create_view<'a>(view_model: ViewModel) -> Container<'a, Message> {
 }
 
 fn create_header<'a>() -> Container<'a, Message> {
-    let settings_btn = button("S");
+    let settings_btn = button("S").on_press(Message::OpenSettings);
 
     let mut container = Container::new(center(
         Row::new().push(horizontal_space()).push(settings_btn),
