@@ -13,11 +13,12 @@ pub fn is_ui_dev() -> bool {
 pub fn modal<'a>(
     base_content: impl Into<Element<'a, Message>>,
     modal_content: impl Into<Element<'a, Message>>,
+    close_message: Message,
 ) -> Element<'a, Message> {
     Stack::new()
         .push(base_content)
-        .push(opaque(mouse_area(center(opaque(modal_content)).style(
-            |_| {
+        .push(opaque(
+            mouse_area(center(opaque(modal_content)).style(|_| {
                 container::Style {
                     background: Some(
                         Color {
@@ -28,7 +29,8 @@ pub fn modal<'a>(
                     ),
                     ..container::Style::default()
                 }
-            },
-        ))))
+            }))
+            .on_press(close_message),
+        ))
         .into()
 }

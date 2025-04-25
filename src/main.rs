@@ -14,7 +14,7 @@ fn main() -> iced::Result {
     let app = App {
         workouts: workouts_state.workouts,
         index: workouts_state.index,
-        show_settings_modal: false
+        show_settings_page: false,
     };
 
     iced::application("Workout Iterator", App::update, App::view)
@@ -26,7 +26,7 @@ fn main() -> iced::Result {
 struct App {
     index: i8,
     workouts: Vec<String>,
-    show_settings_modal: bool,
+    show_settings_page: bool,
 }
 
 impl App {
@@ -34,7 +34,7 @@ impl App {
         match message {
             Message::NextWorkout => self.on_next_workout(),
             Message::OpenSettings => self.on_open_settings(),
-            _ => return,
+            Message::CloseSettings => self.on_close_settings(),
         }
     }
 
@@ -46,7 +46,11 @@ impl App {
     }
 
     fn on_open_settings(&mut self) {
-        self.show_settings_modal = true;
+        self.show_settings_page = true;
+    }
+
+    fn on_close_settings(&mut self) {
+        self.show_settings_page = false;
     }
 
     fn view(&self) -> Element<Message> {
@@ -60,7 +64,7 @@ impl App {
         let has_next = total > 1;
         let selected_number = if total == 0 { 0 } else { self.index + 1 };
 
-        let view = create_view(ViewModel {
+        let main_page = create_view(ViewModel {
             workout,
             has_next,
             selected_number,
@@ -68,10 +72,10 @@ impl App {
         })
         .into();
 
-        if self.show_settings_modal {
-            modal(view, create_settings_page())
+        if self.show_settings_page {
+            modal(main_page, create_settings_page(), Message::CloseSettings)
         } else {
-            view
+            main_page
         }
     }
 }
@@ -80,6 +84,7 @@ impl App {
 enum Message {
     NextWorkout,
     OpenSettings,
+    CloseSettings,
 }
 
 #[derive(Serialize, Deserialize, Default)]
