@@ -26,16 +26,16 @@ pub fn create_main_page<'a>(view_model: ViewModel) -> impl Into<Element<'a, Mess
 
 fn create_header<'a>() -> impl Into<Element<'a, Message>> {
     let settings_btn = button("S").on_press(Message::OpenSettings);
-    let header = center(Row::new().push(horizontal_space()).push(settings_btn));
+    let row = Row::new().push(horizontal_space()).push(settings_btn);
 
-    Container::new(header)
+    center(row)
         .height(HEADER_HEIGHT)
-        .padding(Padding::from([5.0, 10.0]))
+        .padding(Padding::ZERO.right(10.0))
         .dev_background()
 }
 
 fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Message>> {
-    let text = center(text(workout).size(28)).padding(Padding::ZERO.top(20.0));
+    let text = center(text(workout).size(28));
     let button = center(
         button("Next")
             .on_press_maybe(if has_next {
@@ -44,22 +44,19 @@ fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Mes
                 None
             })
             .padding(Padding::from([16.0, 28.0])),
-    )
-    .padding(Padding::ZERO.bottom(20.0));
+    );
 
-    Container::new(Column::new().push(text).push(button)).dev_background()
+    Container::new(Column::new().push(text).push(button))
+        .padding(Padding::ZERO.top(20.0).bottom(20.0))
+        .dev_background()
 }
 
 fn create_footer<'a>(number: i8, total: usize) -> impl Into<Element<'a, Message>> {
-    let footer = center(
-        Row::new()
-            .padding(Padding::from(5.0))
-            .push(text(format!("{} from {}", number, total)))
-            .push(horizontal_space()),
-    );
+    let text = text(format!("{} from {}", number, total));
+    let row = Row::new().push(text).push(horizontal_space());
 
-    Container::new(footer)
+    center(row)
         .height(FOOTER_HEIGHT)
-        .padding(Padding::from([5.0, 10.0]))
+        .padding(Padding::ZERO.left(10.0))
         .dev_background()
 }
