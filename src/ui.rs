@@ -35,7 +35,7 @@ fn create_header<'a>() -> impl Into<Element<'a, Message>> {
 }
 
 fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Message>> {
-    let text = center(text(workout).size(28));
+    let text = center(text(workout).size(28)).padding(Padding::ZERO.top(20.0));
     let button = center(
         button("Next")
             .on_press_maybe(if has_next {
@@ -44,7 +44,8 @@ fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Mes
                 None
             })
             .padding(Padding::from([16.0, 28.0])),
-    );
+    )
+    .padding(Padding::ZERO.bottom(20.0));
 
     Container::new(Column::new().push(text).push(button)).dev_background()
 }
