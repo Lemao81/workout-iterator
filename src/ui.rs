@@ -10,6 +10,11 @@ pub const WINDOW_HEIGHT: f32 = 300.0;
 const HEADER_HEIGHT: u16 = 50;
 const FOOTER_HEIGHT: u16 = 40;
 
+pub enum Page {
+    Main,
+    Settings
+}
+
 pub struct ViewModel {
     pub workout: String,
     pub has_next: bool,

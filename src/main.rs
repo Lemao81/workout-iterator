@@ -2,10 +2,9 @@ mod helper;
 mod persistence;
 mod ui;
 
-use crate::helper::modal;
 use crate::persistence::read_workouts_state;
 use crate::ui::settings_page::create_settings_page;
-use crate::ui::{ViewModel, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
+use crate::ui::{Page, ViewModel, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +13,7 @@ fn main() -> iced::Result {
     let app = App {
         workouts: workouts_state.workouts,
         index: workouts_state.index,
-        show_settings_page: false,
+        current_page: Page::Main,
     };
 
     iced::application("Workout Iterator", App::update, App::view)
@@ -26,7 +25,7 @@ fn main() -> iced::Result {
 struct App {
     index: i8,
     workouts: Vec<String>,
-    show_settings_page: bool,
+    current_page: Page,
 }
 
 impl App {
@@ -46,19 +45,17 @@ impl App {
     }
 
     fn on_open_settings(&mut self) {
-        self.show_settings_page = true;
+        self.current_page = Page::Settings;
     }
 
     fn on_close_settings(&mut self) {
-        self.show_settings_page = false;
+        self.current_page = Page::Main;
     }
 
     fn view(&self) -> Element<Message> {
-        let main_page = create_main_page(self.create_view_model()).into();
-        if self.show_settings_page {
-            modal(main_page, create_settings_page(), Message::CloseSettings)
-        } else {
-            main_page
+        match self.current_page {
+            Page::Main => create_main_page(self.create_view_model()).into(),
+            Page::Settings => create_settings_page().into(),
         }
     }
 
