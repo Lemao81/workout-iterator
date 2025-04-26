@@ -54,6 +54,15 @@ impl App {
     }
 
     fn view(&self) -> Element<Message> {
+        let main_page = create_main_page(self.create_view_model()).into();
+        if self.show_settings_page {
+            modal(main_page, create_settings_page(), Message::CloseSettings)
+        } else {
+            main_page
+        }
+    }
+
+    fn create_view_model(&self) -> ViewModel {
         let workout = self
             .workouts
             .iter()
@@ -64,18 +73,11 @@ impl App {
         let has_next = total > 1;
         let selected_number = if total == 0 { 0 } else { self.index + 1 };
 
-        let main_page = create_main_page(ViewModel {
+        ViewModel {
             workout,
             has_next,
             selected_number,
             total,
-        })
-        .into();
-
-        if self.show_settings_page {
-            modal(main_page, create_settings_page(), Message::CloseSettings)
-        } else {
-            main_page
         }
     }
 }
