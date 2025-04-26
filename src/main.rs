@@ -5,7 +5,7 @@ mod ui;
 use crate::helper::modal;
 use crate::persistence::read_workouts_state;
 use crate::ui::settings_page::create_settings_page;
-use crate::ui::{ViewModel, create_view};
+use crate::ui::{ViewModel, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ fn main() -> iced::Result {
     };
 
     iced::application("Workout Iterator", App::update, App::view)
-        .window_size((500.0, 300.0))
+        .window_size((WINDOW_WIDTH, WINDOW_HEIGHT))
         .resizable(false)
         .run_with(|| (app, Task::none()))
 }
@@ -64,7 +64,7 @@ impl App {
         let has_next = total > 1;
         let selected_number = if total == 0 { 0 } else { self.index + 1 };
 
-        let main_page = create_view(ViewModel {
+        let main_page = create_main_page(ViewModel {
             workout,
             has_next,
             selected_number,

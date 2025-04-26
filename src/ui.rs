@@ -6,6 +6,11 @@ use iced::widget::container::Style;
 use iced::widget::{Column, Container, Row, button, center, horizontal_space, text};
 use iced::{Background, Color, Padding};
 
+pub const WINDOW_WIDTH: f32 = 500.0;
+pub const WINDOW_HEIGHT: f32 = 300.0;
+const HEADER_HEIGHT: u16 = 50;
+const FOOTER_HEIGHT: u16 = 40;
+
 pub struct ViewModel {
     pub workout: String,
     pub has_next: bool,
@@ -13,23 +18,21 @@ pub struct ViewModel {
     pub total: usize,
 }
 
-pub fn create_view<'a>(view_model: ViewModel) -> Container<'a, Message> {
-    Container::new(
-        Column::new()
-            .push(create_header())
-            .push(create_body(view_model.workout, view_model.has_next))
-            .push(create_footer(view_model.selected_number, view_model.total)),
-    )
+pub fn create_main_page<'a>(view_model: ViewModel) -> Column<'a, Message> {
+    Column::new()
+        .push(create_header())
+        .push(create_body(view_model.workout, view_model.has_next))
+        .push(create_footer(view_model.selected_number, view_model.total))
 }
 
 fn create_header<'a>() -> Container<'a, Message> {
     let settings_btn = button("S").on_press(Message::OpenSettings);
 
-    let mut container = Container::new(center(
-        Row::new().push(horizontal_space()).push(settings_btn),
-    ))
-    .height(50)
-    .padding(Padding::from([5.0, 10.0]));
+    let header = center(Row::new().push(horizontal_space()).push(settings_btn));
+
+    let mut container = Container::new(header)
+        .height(HEADER_HEIGHT)
+        .padding(Padding::from([5.0, 10.0]));
 
     if is_ui_dev() {
         container = set_container_background(container, Color::from_rgb8(255, 0, 0));
@@ -39,14 +42,9 @@ fn create_header<'a>() -> Container<'a, Message> {
 }
 
 fn create_body<'a>(workout: String, has_next: bool) -> Container<'a, Message> {
-    let center_width = 250.0;
-    let center_height = 100.0;
-    
-    let workout_txt = center(text(workout).size(28))
-        .width(center_width)
-        .height(center_height);
+    let text = center(text(workout).size(28));
 
-    let next_btn = center(
+    let button = center(
         button("Next")
             .on_press_maybe(if has_next {
                 Some(Message::NextWorkout)
@@ -54,12 +52,9 @@ fn create_body<'a>(workout: String, has_next: bool) -> Container<'a, Message> {
                 None
             })
             .padding(Padding::from([16.0, 28.0])),
-    )
-    .width(center_width)
-    .height(center_height);
+    );
 
-    let mut container = Container::new(center(Column::new().push(workout_txt).push(next_btn)))
-        .padding(Padding::from(5.0));
+    let mut container = Container::new(Column::new().push(text).push(button));
 
     if is_ui_dev() {
         container = set_container_background(container, Color::from_rgb8(0, 255, 0));
@@ -69,14 +64,16 @@ fn create_body<'a>(workout: String, has_next: bool) -> Container<'a, Message> {
 }
 
 fn create_footer<'a>(number: i8, total: usize) -> Container<'a, Message> {
-    let mut container = Container::new(center(
+    let footer = center(
         Row::new()
             .padding(Padding::from(5.0))
             .push(text(format!("{} from {}", number, total)))
             .push(horizontal_space()),
-    ))
-    .padding(Padding::from([5.0, 10.0]))
-    .height(40);
+    );
+
+    let mut container = Container::new(footer)
+        .height(FOOTER_HEIGHT)
+        .padding(Padding::from([5.0, 10.0]));
 
     if is_ui_dev() {
         container = set_container_background(container, Color::from_rgb8(0, 0, 255));

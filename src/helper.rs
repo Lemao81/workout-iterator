@@ -1,5 +1,5 @@
 use crate::Message;
-use iced::widget::{Stack, center, container, mouse_area, opaque, stack};
+use iced::widget::{Stack, center, container, mouse_area, opaque};
 use iced::{Color, Element};
 
 pub fn is_ui_dev() -> bool {
