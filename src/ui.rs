@@ -1,10 +1,9 @@
 pub mod settings_page;
 
 use crate::Message;
-use crate::helper::is_ui_dev;
-use iced::widget::container::Style;
+use crate::helper::DevBackgroundExt;
 use iced::widget::{Column, Container, Row, button, center, horizontal_space, text};
-use iced::{Background, Color, Element, Padding};
+use iced::{Element, Padding};
 
 pub const WINDOW_WIDTH: f32 = 500.0;
 pub const WINDOW_HEIGHT: f32 = 300.0;
@@ -27,23 +26,16 @@ pub fn create_main_page<'a>(view_model: ViewModel) -> impl Into<Element<'a, Mess
 
 fn create_header<'a>() -> impl Into<Element<'a, Message>> {
     let settings_btn = button("S").on_press(Message::OpenSettings);
-
     let header = center(Row::new().push(horizontal_space()).push(settings_btn));
 
-    let mut container = Container::new(header)
+    Container::new(header)
         .height(HEADER_HEIGHT)
-        .padding(Padding::from([5.0, 10.0]));
-
-    if is_ui_dev() {
-        container = set_container_background(container, Color::from_rgb8(255, 0, 0));
-    }
-
-    container
+        .padding(Padding::from([5.0, 10.0]))
+        .dev_background()
 }
 
 fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Message>> {
     let text = center(text(workout).size(28));
-
     let button = center(
         button("Next")
             .on_press_maybe(if has_next {
@@ -54,13 +46,7 @@ fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Mes
             .padding(Padding::from([16.0, 28.0])),
     );
 
-    let mut container = Container::new(Column::new().push(text).push(button));
-
-    if is_ui_dev() {
-        container = set_container_background(container, Color::from_rgb8(0, 255, 0));
-    }
-
-    container
+    Container::new(Column::new().push(text).push(button)).dev_background()
 }
 
 fn create_footer<'a>(number: i8, total: usize) -> impl Into<Element<'a, Message>> {
@@ -71,17 +57,8 @@ fn create_footer<'a>(number: i8, total: usize) -> impl Into<Element<'a, Message>
             .push(horizontal_space()),
     );
 
-    let mut container = Container::new(footer)
+    Container::new(footer)
         .height(FOOTER_HEIGHT)
-        .padding(Padding::from([5.0, 10.0]));
-
-    if is_ui_dev() {
-        container = set_container_background(container, Color::from_rgb8(0, 0, 255));
-    }
-
-    container
-}
-
-fn set_container_background(container: Container<Message>, color: Color) -> Container<Message> {
-    container.style(move |_| Style::default().background(Background::Color(color)))
+        .padding(Padding::from([5.0, 10.0]))
+        .dev_background()
 }
