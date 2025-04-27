@@ -15,6 +15,7 @@ pub struct SettingsViewModel {
     pub workouts: Vec<String>,
     pub workout_selection: Option<String>,
     pub workout_input: Option<String>,
+    pub can_add: bool,
 }
 
 pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Element<'a, Message>> {
@@ -23,6 +24,7 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
             view_model.workouts,
             view_model.workout_selection,
             view_model.workout_input,
+            view_model.can_add,
         ))
         .push(create_footer())
 }
@@ -31,10 +33,11 @@ fn create_body<'a>(
     workouts: Vec<String>,
     workout_selection: Option<String>,
     workout_input: Option<String>,
+    can_add: bool,
 ) -> impl Into<Element<'a, Message>> {
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
-        .push(create_button_panel(workout_input))
+        .push(create_button_panel(workout_input, can_add))
         .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
@@ -61,11 +64,14 @@ fn create_workouts_list<'a>(
     Scrollable::with_direction(column, Direction::Vertical(Scrollbar::default()))
 }
 
-fn create_button_panel<'a>(workout_input: Option<String>) -> impl Into<Element<'a, Message>> {
+fn create_button_panel<'a>(
+    workout_input: Option<String>,
+    can_add: bool,
+) -> impl Into<Element<'a, Message>> {
     let input_value = workout_input.clone().map_or("".to_owned(), move |s| s);
-    let add_input =
-        text_input("New workout", &input_value).on_input(|s| Message::WorkoutInput(Some(s)));
-    let add_btn = button(text("Add"));
+    let add_input = text_input("New workout", &input_value)
+        .on_input(|s| Message::WorkoutInput(Some(s).filter(|s| !s.is_empty())));
+    let add_btn = button(text("Add")).on_press_maybe(can_add.then_some(Message::AddWorkout));
 
     let move_up_btn = button(text("\u{2191}"));
     let move_down_btn = button(text("\u{2193}"));

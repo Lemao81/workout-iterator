@@ -16,6 +16,7 @@ fn main() -> iced::Result {
         current_page: Page::Main,
         workout_selection: None,
         workout_input: None,
+        can_add: false,
     };
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
@@ -30,6 +31,7 @@ struct AppState {
     current_page: Page,
     workout_selection: Option<String>,
     workout_input: Option<String>,
+    can_add: bool,
 }
 
 impl AppState {
@@ -40,6 +42,7 @@ impl AppState {
             Message::CloseSettings => self.on_close_settings(),
             Message::WorkoutSelection(workout_option) => self.on_workout_selection(workout_option),
             Message::WorkoutInput(input_option) => self.on_workout_input(input_option),
+            Message::AddWorkout => self.on_add_workout(),
         }
     }
 
@@ -67,8 +70,12 @@ impl AppState {
     }
 
     fn on_workout_input(&mut self, workout_input: Option<String>) {
-        self.workout_input = workout_input;
+        self.workout_input = workout_input.clone();
+        self.can_add =
+            matches!(workout_input, Some(input) if self.workouts.iter().all(|s| !input.eq(s)))
     }
+
+    fn on_add_workout(&mut self) {}
 
     fn view(&self) -> Element<Message> {
         match self.current_page {
@@ -105,6 +112,7 @@ impl AppState {
             workouts: self.workouts.clone(),
             workout_selection: self.workout_selection.clone(),
             workout_input: self.workout_input.clone(),
+            can_add: self.can_add
         }
     }
 }
@@ -116,6 +124,7 @@ enum Message {
     CloseSettings,
     WorkoutSelection(Option<String>),
     WorkoutInput(Option<String>),
+    AddWorkout,
 }
 
 #[derive(Serialize, Deserialize, Default)]
