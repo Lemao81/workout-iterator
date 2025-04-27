@@ -7,8 +7,8 @@ use iced::{Element, Padding};
 
 pub const WINDOW_WIDTH: f32 = 500.0;
 pub const WINDOW_HEIGHT: f32 = 300.0;
-const HEADER_HEIGHT: u16 = 50;
-const FOOTER_HEIGHT: u16 = 40;
+const HEADER_HEIGHT: f32 = 50.0;
+const FOOTER_HEIGHT: f32 = 40.0;
 
 pub enum Page {
     Main,

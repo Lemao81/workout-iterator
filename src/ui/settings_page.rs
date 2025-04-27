@@ -1,12 +1,15 @@
 use crate::Message;
 use crate::Message::WorkoutSelection;
 use crate::helper::DevBackgroundExt;
+use crate::ui::WINDOW_HEIGHT;
 use iced::widget::button::Style;
 use iced::widget::scrollable::{Direction, Scrollbar};
-use iced::widget::{Column, Row, Scrollable, button, center, horizontal_space, text};
+use iced::widget::{
+    Column, Row, Scrollable, Space, button, center, horizontal_space, text, text_input,
+};
 use iced::{Border, Color, Element, Length, Padding};
 
-const FOOTER_HEIGHT: u16 = 50;
+const FOOTER_HEIGHT: f32 = 50.0;
 
 pub struct SettingsViewModel {
     pub workouts: Vec<String>,
@@ -29,6 +32,7 @@ fn create_body<'a>(
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
         .push(create_button_panel())
+        .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
 fn create_workouts_list<'a>(
@@ -55,7 +59,26 @@ fn create_workouts_list<'a>(
 }
 
 fn create_button_panel<'a>() -> impl Into<Element<'a, Message>> {
-    center(text("buttons")).dev_background()
+    let add_input = text_input("New workout", "");
+    let add_btn = button(text("Add"));
+    
+    let move_up_btn = button(text("\u{2191}"));
+    let move_down_btn = button(text("\u{2193}"));
+    let remove_btn = button(text("x"));
+    let edit_row = Row::new()
+        .push(move_up_btn)
+        .push(move_down_btn)
+        .push(Space::with_width(10.0))
+        .push(remove_btn)
+        .spacing(5.0);
+
+    Column::new()
+        .push(add_input)
+        .push(add_btn)
+        .push(Space::with_height(10.0))
+        .push(edit_row)
+        .padding(10.0)
+        .spacing(5.0)
 }
 
 fn create_footer<'a>() -> impl Into<Element<'a, Message>> {
