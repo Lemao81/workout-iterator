@@ -14,6 +14,7 @@ fn main() -> iced::Result {
         workouts: workouts_state.workouts,
         index: workouts_state.index,
         current_page: Page::Main,
+        workout_selection: None,
     };
 
     iced::application("Workout Iterator", App::update, App::view)
@@ -26,6 +27,7 @@ struct App {
     index: i8,
     workouts: Vec<String>,
     current_page: Page,
+    workout_selection: Option<String>,
 }
 
 impl App {
@@ -34,6 +36,7 @@ impl App {
             Message::NextWorkout => self.on_next_workout(),
             Message::OpenSettings => self.on_open_settings(),
             Message::CloseSettings => self.on_close_settings(),
+            Message::WorkoutSelection(workout_option) => self.on_workout_selection(workout_option),
         }
     }
 
@@ -50,6 +53,14 @@ impl App {
 
     fn on_close_settings(&mut self) {
         self.current_page = Page::Main;
+    }
+
+    fn on_workout_selection(&mut self, workout_option: Option<String>) {
+        self.workout_selection = if self.workout_selection.eq(&workout_option) {
+            None
+        } else {
+            workout_option
+        };
     }
 
     fn view(&self) -> Element<Message> {
@@ -81,6 +92,7 @@ impl App {
     fn create_settings_view_model(&self) -> SettingsViewModel {
         SettingsViewModel {
             workouts: self.workouts.clone(),
+            workout_selection: self.workout_selection.clone(),
         }
     }
 }
@@ -90,6 +102,7 @@ enum Message {
     NextWorkout,
     OpenSettings,
     CloseSettings,
+    WorkoutSelection(Option<String>),
 }
 
 #[derive(Serialize, Deserialize, Default)]
