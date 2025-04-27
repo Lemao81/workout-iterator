@@ -15,14 +15,14 @@ pub enum Page {
     Settings
 }
 
-pub struct ViewModel {
+pub struct MainViewModel {
     pub workout: String,
     pub has_next: bool,
     pub selected_number: i8,
     pub total: usize,
 }
 
-pub fn create_main_page<'a>(view_model: ViewModel) -> impl Into<Element<'a, Message>> {
+pub fn create_main_page<'a>(view_model: MainViewModel) -> impl Into<Element<'a, Message>> {
     Column::new()
         .push(create_header())
         .push(create_body(view_model.workout, view_model.has_next))

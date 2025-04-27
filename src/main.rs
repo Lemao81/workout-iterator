@@ -3,8 +3,8 @@ mod persistence;
 mod ui;
 
 use crate::persistence::read_workouts_state;
-use crate::ui::settings_page::create_settings_page;
-use crate::ui::{Page, ViewModel, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
+use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
+use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
 use serde::{Deserialize, Serialize};
 
@@ -54,12 +54,12 @@ impl App {
 
     fn view(&self) -> Element<Message> {
         match self.current_page {
-            Page::Main => create_main_page(self.create_view_model()).into(),
-            Page::Settings => create_settings_page().into(),
+            Page::Main => create_main_page(self.create_main_view_model()).into(),
+            Page::Settings => create_settings_page(self.create_settings_view_model()).into(),
         }
     }
 
-    fn create_view_model(&self) -> ViewModel {
+    fn create_main_view_model(&self) -> MainViewModel {
         let workout = self
             .workouts
             .iter()
@@ -70,11 +70,17 @@ impl App {
         let has_next = total > 1;
         let selected_number = if total == 0 { 0 } else { self.index + 1 };
 
-        ViewModel {
+        MainViewModel {
             workout,
             has_next,
             selected_number,
             total,
+        }
+    }
+
+    fn create_settings_view_model(&self) -> SettingsViewModel {
+        SettingsViewModel {
+            workouts: self.workouts.clone(),
         }
     }
 }
