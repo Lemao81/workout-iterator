@@ -14,6 +14,7 @@ const FOOTER_HEIGHT: f32 = 50.0;
 pub struct SettingsViewModel {
     pub workouts: Vec<String>,
     pub workout_selection: Option<String>,
+    pub workout_input: Option<String>,
 }
 
 pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Element<'a, Message>> {
@@ -21,6 +22,7 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
         .push(create_body(
             view_model.workouts,
             view_model.workout_selection,
+            view_model.workout_input,
         ))
         .push(create_footer())
 }
@@ -28,10 +30,11 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
 fn create_body<'a>(
     workouts: Vec<String>,
     workout_selection: Option<String>,
+    workout_input: Option<String>,
 ) -> impl Into<Element<'a, Message>> {
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
-        .push(create_button_panel())
+        .push(create_button_panel(workout_input))
         .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
@@ -44,7 +47,7 @@ fn create_workouts_list<'a>(
         .fold(
             Column::new(),
             |column: Column<'a, Message>, workout: String| {
-                let is_selected = workout_selection.clone().map_or(false, |w| w == workout);
+                let is_selected = workout_selection.clone().map_or(false, |s| s == workout);
                 let button = button(text(workout.clone()))
                     .width(Length::Fill)
                     .style(move |_, _| get_list_item_style(is_selected))
@@ -58,10 +61,12 @@ fn create_workouts_list<'a>(
     Scrollable::with_direction(column, Direction::Vertical(Scrollbar::default()))
 }
 
-fn create_button_panel<'a>() -> impl Into<Element<'a, Message>> {
-    let add_input = text_input("New workout", "");
+fn create_button_panel<'a>(workout_input: Option<String>) -> impl Into<Element<'a, Message>> {
+    let input_value = workout_input.clone().map_or("".to_owned(), move |s| s);
+    let add_input =
+        text_input("New workout", &input_value).on_input(|s| Message::WorkoutInput(Some(s)));
     let add_btn = button(text("Add"));
-    
+
     let move_up_btn = button(text("\u{2191}"));
     let move_down_btn = button(text("\u{2193}"));
     let remove_btn = button(text("x"));
