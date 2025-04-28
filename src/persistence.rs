@@ -1,7 +1,7 @@
 use crate::WorkoutsState;
 use std::fs;
 use std::fs::File;
-use std::io::Write;
+use std::io::{Error, Write};
 
 const CONFIG_JSON: &'static str = "workouts.json";
 
@@ -26,19 +26,25 @@ pub fn read_workouts_state() -> WorkoutsState {
     workouts_state
 }
 
-fn maybe_create_initial_workouts_json() -> Result<(), std::io::Error> {
-    if fs::exists(CONFIG_JSON)? {
-        return Ok(());
-    }
-
+pub fn write_workouts_state(workouts_state: WorkoutsState) -> Result<(), Error> {
     let mut file = File::create(CONFIG_JSON)?;
-    let buffer = serde_json::to_vec(&WorkoutsState::default())?;
+    let buffer = serde_json::to_vec(&workouts_state)?;
     file.write_all(&buffer)?;
 
     Ok(())
 }
 
-fn read_workouts_json() -> Result<WorkoutsState, std::io::Error> {
+fn maybe_create_initial_workouts_json() -> Result<(), Error> {
+    if fs::exists(CONFIG_JSON)? {
+        return Ok(());
+    }
+
+    write_workouts_state(WorkoutsState::default())?;
+
+    Ok(())
+}
+
+fn read_workouts_json() -> Result<WorkoutsState, Error> {
     let buffer = fs::read(CONFIG_JSON)?;
 
     Ok(serde_json::from_slice(&buffer)?)
