@@ -2,7 +2,7 @@ mod helper;
 mod persistence;
 mod ui;
 
-use crate::persistence::{read_workouts_state, write_workouts_state};
+use crate::persistence::{log_error, read_workouts_state, write_workouts_state};
 use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
@@ -88,17 +88,6 @@ impl AppState {
         }
     }
 
-    fn write_workouts_state(&mut self) {
-        let result = write_workouts_state(WorkoutsState {
-            index: self.workout_index,
-            workouts: self.workouts.clone(),
-        });
-
-        if let Err(error) = result {
-            println!("{}", error);
-        }
-    }
-
     fn view(&self) -> Element<Message> {
         match self.current_page {
             Page::Main => create_main_page(self.create_main_view_model()).into(),
@@ -135,6 +124,17 @@ impl AppState {
             workout_selection: self.workout_selection.clone(),
             workout_input: self.workout_input.clone(),
             can_add: self.can_add,
+        }
+    }
+
+    fn write_workouts_state(&mut self) {
+        let result = write_workouts_state(WorkoutsState {
+            index: self.workout_index,
+            workouts: self.workouts.clone(),
+        });
+        
+        if let Err(error) = result {
+            log_error(error.to_string()).ok();
         }
     }
 }

@@ -1,9 +1,11 @@
 use crate::WorkoutsState;
+use chrono::Local;
 use std::fs;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{Error, Write};
 
 const CONFIG_JSON: &'static str = "workouts.json";
+const ERROR_LOG: &'static str = "error.log";
 
 pub fn read_workouts_state() -> WorkoutsState {
     if let Err(error) = maybe_create_initial_workouts_json() {
@@ -30,6 +32,19 @@ pub fn write_workouts_state(workouts_state: WorkoutsState) -> Result<(), Error> 
     let mut file = File::create(CONFIG_JSON)?;
     let buffer = serde_json::to_vec(&workouts_state)?;
     file.write_all(&buffer)?;
+
+    Ok(())
+}
+
+pub fn log_error(error: impl AsRef<str>) -> Result<(), Error> {
+    println!("{}", error.as_ref());
+
+    let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
+    let mut file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(ERROR_LOG)?;
+    writeln!(file, "{}  -  {}", timestamp, error.as_ref())?;
 
     Ok(())
 }
