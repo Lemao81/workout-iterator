@@ -7,12 +7,17 @@ use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 fn main() -> iced::Result {
     let workouts_state = read_workouts_state();
     let app_state = AppState {
         workout_index: workouts_state.index,
-        workouts: workouts_state.workouts,
+        workouts: workouts_state
+            .workouts
+            .into_iter()
+            .map(|s| Workout::new(s))
+            .collect(),
         current_page: Page::Main,
         workout_selection: None,
         workout_input: None,
@@ -27,9 +32,9 @@ fn main() -> iced::Result {
 
 struct AppState {
     workout_index: i8,
-    workouts: Vec<String>,
+    workouts: Vec<Workout>,
     current_page: Page,
-    workout_selection: Option<String>,
+    workout_selection: Option<Workout>,
     workout_input: Option<String>,
     can_add: bool,
 }
@@ -62,30 +67,38 @@ impl AppState {
         self.current_page = Page::Main;
     }
 
-    fn on_workout_selection(&mut self, workout_option: Option<String>) {
-        self.workout_selection = if self.workout_selection.eq(&workout_option) {
-            None
-        } else {
-            workout_option
-        };
+    fn on_workout_selection(&mut self, workout_option: Option<Workout>) {
+        if let (Some(selected), Some(select)) =
+            (self.workout_selection.clone(), workout_option.clone())
+        {
+            self.workout_selection = if selected.id == select.id {
+                None
+            } else {
+                workout_option
+            };
+
+            return;
+        }
+
+        self.workout_selection = workout_option;
     }
 
     fn on_workout_input(&mut self, workout_input: Option<String>) {
         self.workout_input = workout_input.clone();
         self.can_add =
-            matches!(workout_input, Some(input) if self.workouts.iter().all(|s| !input.eq(s)))
+            matches!(workout_input, Some(input) if self.workouts.iter().all(|s| !input.eq(&s.text)))
     }
 
     fn on_add_workout(&mut self) {
-        if matches!(self.workout_input.clone(), Some(input) if self.workouts.iter().any(|s| input.eq(s)) || input.is_empty())
-        {
-            return;
-        }
+        let input = match self.workout_input.clone() {
+            None => return,
+            Some(s) if s.is_empty() => return,
+            Some(s) if self.workouts.iter().any(|w| w.text.eq(&s)) => return,
+            Some(s) => s,
+        };
 
-        if let Some(input) = self.workout_input.clone() {
-            self.workouts.push(input);
-            self.write_workouts_state();
-        }
+        self.workouts.push(Workout::new(input));
+        self.write_workouts_state();
     }
 
     fn view(&self) -> Element<Message> {
@@ -100,8 +113,7 @@ impl AppState {
             .workouts
             .iter()
             .nth(self.workout_index as usize)
-            .unwrap_or(&"<empty>".to_owned())
-            .clone();
+            .map_or("<empty>".to_owned(), |w| w.text.clone());
         let total = self.workouts.iter().count();
         let has_next = total > 1;
         let selected_number = if total == 0 {
@@ -130,9 +142,9 @@ impl AppState {
     fn write_workouts_state(&mut self) {
         let result = write_workouts_state(WorkoutsState {
             index: self.workout_index,
-            workouts: self.workouts.clone(),
+            workouts: self.workouts.iter().map(|w| w.text.clone()).collect(),
         });
-        
+
         if let Err(error) = result {
             log_error(error.to_string()).ok();
         }
@@ -144,7 +156,7 @@ enum Message {
     NextWorkout,
     OpenSettings,
     CloseSettings,
-    WorkoutSelection(Option<String>),
+    WorkoutSelection(Option<Workout>),
     WorkoutInput(Option<String>),
     AddWorkout,
 }
@@ -153,4 +165,19 @@ enum Message {
 struct WorkoutsState {
     index: i8,
     workouts: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+struct Workout {
+    id: Uuid,
+    text: String,
+}
+
+impl Workout {
+    fn new(text: String) -> Workout {
+        Workout {
+            id: Uuid::new_v4(),
+            text,
+        }
+    }
 }

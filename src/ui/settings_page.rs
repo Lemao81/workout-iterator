@@ -1,4 +1,4 @@
-use crate::Message;
+use crate::{Message, Workout};
 use crate::Message::WorkoutSelection;
 use crate::helper::DevBackgroundExt;
 use crate::ui::WINDOW_HEIGHT;
@@ -12,8 +12,8 @@ use iced::{Border, Color, Element, Length, Padding};
 const FOOTER_HEIGHT: f32 = 50.0;
 
 pub struct SettingsViewModel {
-    pub workouts: Vec<String>,
-    pub workout_selection: Option<String>,
+    pub workouts: Vec<Workout>,
+    pub workout_selection: Option<Workout>,
     pub workout_input: Option<String>,
     pub can_add: bool,
 }
@@ -30,8 +30,8 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
 }
 
 fn create_body<'a>(
-    workouts: Vec<String>,
-    workout_selection: Option<String>,
+    workouts: Vec<Workout>,
+    workout_selection: Option<Workout>,
     workout_input: Option<String>,
     can_add: bool,
 ) -> impl Into<Element<'a, Message>> {
@@ -42,16 +42,16 @@ fn create_body<'a>(
 }
 
 fn create_workouts_list<'a>(
-    workouts: Vec<String>,
-    workout_selection: Option<String>,
+    workouts: Vec<Workout>,
+    workout_selection: Option<Workout>,
 ) -> impl Into<Element<'a, Message>> {
     let column = workouts
         .into_iter()
         .fold(
             Column::new(),
-            |column: Column<'a, Message>, workout: String| {
-                let is_selected = workout_selection.clone().map_or(false, |s| s == workout);
-                let button = button(text(workout.clone()))
+            |column: Column<'a, Message>, workout: Workout| {
+                let is_selected = workout_selection.clone().map_or(false, |w| w.id == workout.id);
+                let button = button(text(workout.text.clone()))
                     .width(Length::Fill)
                     .style(move |_, _| get_list_item_style(is_selected))
                     .on_press(WorkoutSelection(Some(workout)));
