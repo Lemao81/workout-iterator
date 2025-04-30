@@ -2,7 +2,11 @@ mod helper;
 mod persistence;
 mod ui;
 
+use crate::helper::modal;
 use crate::persistence::{log_error, read_workouts_state, write_workouts_state};
+use crate::ui::confirmation_dialog::{
+    ConfirmationPayload, ConfirmationTopic, create_confirmation_dialog,
+};
 use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
@@ -19,9 +23,11 @@ fn main() -> iced::Result {
             .map(|s| Workout::new(s))
             .collect(),
         current_page: Page::Main,
+        show_workout_deletion_confirmation: false,
         workout_selection: None,
         workout_input: None,
         can_add: false,
+        can_delete: false,
     };
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
@@ -34,9 +40,11 @@ struct AppState {
     workout_index: i8,
     workouts: Vec<Workout>,
     current_page: Page,
+    show_workout_deletion_confirmation: bool,
     workout_selection: Option<Workout>,
     workout_input: Option<String>,
     can_add: bool,
+    can_delete: bool,
 }
 
 impl AppState {
@@ -45,9 +53,11 @@ impl AppState {
             Message::NextWorkout => self.on_next_workout(),
             Message::OpenSettings => self.on_open_settings(),
             Message::CloseSettings => self.on_close_settings(),
+            Message::CloseConfirmationDialog(payload) => self.on_close_confirmation_dialog(payload),
             Message::WorkoutSelection(workout_option) => self.on_workout_selection(workout_option),
             Message::WorkoutInput(input_option) => self.on_workout_input(input_option),
             Message::AddWorkout => self.on_add_workout(),
+            Message::InitiateWorkoutDeletion => self.on_initiate_workout_deletion(),
         }
     }
 
@@ -67,6 +77,17 @@ impl AppState {
         self.current_page = Page::Main;
     }
 
+    fn on_close_confirmation_dialog(&mut self, payload: ConfirmationPayload) {
+        match payload.topic {
+            ConfirmationTopic::WorkoutDeletion => {
+                self.show_workout_deletion_confirmation = false;
+                if payload.confirmed {
+                    self.delete_workout();
+                }
+            }
+        };
+    }
+
     fn on_workout_selection(&mut self, workout_option: Option<Workout>) {
         if let (Some(selected), Some(select)) =
             (self.workout_selection.clone(), workout_option.clone())
@@ -76,11 +97,12 @@ impl AppState {
             } else {
                 workout_option
             };
-
-            return;
+        } else {
+            self.workout_selection = workout_option;
         }
 
-        self.workout_selection = workout_option;
+        self.can_add = self.workout_selection.is_none();
+        self.can_delete = self.workout_selection.is_some();
     }
 
     fn on_workout_input(&mut self, workout_input: Option<String>) {
@@ -101,10 +123,27 @@ impl AppState {
         self.write_workouts_state();
     }
 
+    fn on_initiate_workout_deletion(&mut self) {
+        self.show_workout_deletion_confirmation = true;
+    }
+
+    fn delete_workout(&mut self) {}
+
     fn view(&self) -> Element<Message> {
-        match self.current_page {
+        let page = match self.current_page {
             Page::Main => create_main_page(self.create_main_view_model()).into(),
             Page::Settings => create_settings_page(self.create_settings_view_model()).into(),
+        };
+
+        if self.show_workout_deletion_confirmation {
+            let payload = ConfirmationPayload::new(ConfirmationTopic::WorkoutDeletion);
+            modal(
+                page,
+                create_confirmation_dialog(payload.clone()),
+                Message::CloseConfirmationDialog(payload),
+            )
+        } else {
+            page
         }
     }
 
@@ -136,6 +175,7 @@ impl AppState {
             workout_selection: self.workout_selection.clone(),
             workout_input: self.workout_input.clone(),
             can_add: self.can_add,
+            can_delete: self.can_delete,
         }
     }
 
@@ -156,9 +196,11 @@ enum Message {
     NextWorkout,
     OpenSettings,
     CloseSettings,
+    CloseConfirmationDialog(ConfirmationPayload),
     WorkoutSelection(Option<Workout>),
     WorkoutInput(Option<String>),
     AddWorkout,
+    InitiateWorkoutDeletion,
 }
 
 #[derive(Serialize, Deserialize, Default)]

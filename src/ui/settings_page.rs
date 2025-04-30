@@ -1,7 +1,7 @@
-use crate::{Message, Workout};
 use crate::Message::WorkoutSelection;
 use crate::helper::DevBackgroundExt;
-use crate::ui::WINDOW_HEIGHT;
+use crate::ui::{SPACING_M, SPACING_S, SPACING_X, WINDOW_HEIGHT};
+use crate::{Message, Workout};
 use iced::widget::button::Style;
 use iced::widget::scrollable::{Direction, Scrollbar};
 use iced::widget::{
@@ -16,6 +16,7 @@ pub struct SettingsViewModel {
     pub workout_selection: Option<Workout>,
     pub workout_input: Option<String>,
     pub can_add: bool,
+    pub can_delete: bool,
 }
 
 pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Element<'a, Message>> {
@@ -25,6 +26,7 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
             view_model.workout_selection,
             view_model.workout_input,
             view_model.can_add,
+            view_model.can_delete,
         ))
         .push(create_footer())
 }
@@ -34,10 +36,11 @@ fn create_body<'a>(
     workout_selection: Option<Workout>,
     workout_input: Option<String>,
     can_add: bool,
+    can_delete: bool,
 ) -> impl Into<Element<'a, Message>> {
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
-        .push(create_button_panel(workout_input, can_add))
+        .push(create_button_panel(workout_input, can_add, can_delete))
         .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
@@ -50,7 +53,9 @@ fn create_workouts_list<'a>(
         .fold(
             Column::new(),
             |column: Column<'a, Message>, workout: Workout| {
-                let is_selected = workout_selection.clone().map_or(false, |w| w.id == workout.id);
+                let is_selected = workout_selection
+                    .clone()
+                    .map_or(false, |w| w.id == workout.id);
                 let button = button(text(workout.text.clone()))
                     .width(Length::Fill)
                     .style(move |_, _| get_list_item_style(is_selected))
@@ -58,7 +63,7 @@ fn create_workouts_list<'a>(
                 column.push(button)
             },
         )
-        .padding(Padding::new(5.0).right(15.0))
+        .padding(Padding::new(SPACING_S).right(SPACING_X))
         .spacing(2);
 
     Scrollable::with_direction(column, Direction::Vertical(Scrollbar::default()))
@@ -67,6 +72,7 @@ fn create_workouts_list<'a>(
 fn create_button_panel<'a>(
     workout_input: Option<String>,
     can_add: bool,
+    can_delete: bool,
 ) -> impl Into<Element<'a, Message>> {
     let input_value = workout_input.clone().map_or("".to_owned(), move |s| s);
     let add_input = text_input("New workout", &input_value)
@@ -75,21 +81,22 @@ fn create_button_panel<'a>(
 
     let move_up_btn = button(text("\u{2191}"));
     let move_down_btn = button(text("\u{2193}"));
-    let remove_btn = button(text("x"));
+    let remove_btn =
+        button(text("x")).on_press_maybe(can_delete.then_some(Message::InitiateWorkoutDeletion));
     let edit_row = Row::new()
         .push(move_up_btn)
         .push(move_down_btn)
-        .push(Space::with_width(10.0))
+        .push(Space::with_width(SPACING_M))
         .push(remove_btn)
-        .spacing(5.0);
+        .spacing(SPACING_S);
 
     Column::new()
         .push(add_input)
         .push(add_btn)
-        .push(Space::with_height(10.0))
+        .push(Space::with_height(SPACING_M))
         .push(edit_row)
-        .padding(10.0)
-        .spacing(5.0)
+        .padding(SPACING_M)
+        .spacing(SPACING_S)
 }
 
 fn create_footer<'a>() -> impl Into<Element<'a, Message>> {
@@ -98,7 +105,7 @@ fn create_footer<'a>() -> impl Into<Element<'a, Message>> {
 
     center(row)
         .height(FOOTER_HEIGHT)
-        .padding(Padding::ZERO.right(10.0))
+        .padding(Padding::ZERO.right(SPACING_M))
         .dev_background()
 }
 

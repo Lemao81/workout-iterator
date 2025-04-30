@@ -1,3 +1,4 @@
+pub mod confirmation_dialog;
 pub mod settings_page;
 
 use crate::Message;
@@ -9,10 +10,14 @@ pub const WINDOW_WIDTH: f32 = 500.0;
 pub const WINDOW_HEIGHT: f32 = 300.0;
 const HEADER_HEIGHT: f32 = 50.0;
 const FOOTER_HEIGHT: f32 = 40.0;
+const SPACING_S: f32 = 5.0;
+const SPACING_M: f32 = 10.0;
+const SPACING_X: f32 = 15.0;
+const SPACING_XL: f32 = 20.0;
 
 pub enum Page {
     Main,
-    Settings
+    Settings,
 }
 
 pub struct MainViewModel {
@@ -35,7 +40,7 @@ fn create_header<'a>() -> impl Into<Element<'a, Message>> {
 
     center(row)
         .height(HEADER_HEIGHT)
-        .padding(Padding::ZERO.right(10.0))
+        .padding(Padding::ZERO.right(SPACING_M))
         .dev_background()
 }
 
@@ -62,6 +67,6 @@ fn create_footer<'a>(number: i8, total: usize) -> impl Into<Element<'a, Message>
 
     center(row)
         .height(FOOTER_HEIGHT)
-        .padding(Padding::ZERO.left(10.0))
+        .padding(Padding::ZERO.left(SPACING_M))
         .dev_background()
 }
