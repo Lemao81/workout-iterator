@@ -1,11 +1,17 @@
-use crate::WorkoutsState;
 use chrono::Local;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{Error, Write};
 
 const CONFIG_JSON: &'static str = "workouts.json";
 const ERROR_LOG: &'static str = "error.log";
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct WorkoutsState {
+    pub index: i8,
+    pub workouts: Vec<String>,
+}
 
 pub fn read_workouts_state() -> WorkoutsState {
     if let Err(error) = maybe_create_initial_workouts_json() {

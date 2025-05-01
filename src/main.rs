@@ -3,14 +3,13 @@ mod persistence;
 mod ui;
 
 use crate::helper::modal;
-use crate::persistence::{log_error, read_workouts_state, write_workouts_state};
+use crate::persistence::{WorkoutsState, log_error, read_workouts_state, write_workouts_state};
 use crate::ui::confirmation_dialog::{
     ConfirmationPayload, ConfirmationTopic, create_confirmation_dialog,
 };
 use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 fn main() -> iced::Result {
@@ -201,12 +200,6 @@ enum Message {
     WorkoutInput(Option<String>),
     AddWorkout,
     InitiateWorkoutDeletion,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-struct WorkoutsState {
-    index: i8,
-    workouts: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
