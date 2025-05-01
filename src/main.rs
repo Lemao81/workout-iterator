@@ -14,13 +14,14 @@ use uuid::Uuid;
 
 fn main() -> iced::Result {
     let workouts_state = read_workouts_state();
+    let workouts = workouts_state
+        .workouts
+        .into_iter()
+        .map(|s| Workout::new(s))
+        .collect();
     let app_state = AppState {
         workout_index: workouts_state.index,
-        workouts: workouts_state
-            .workouts
-            .into_iter()
-            .map(|s| Workout::new(s))
-            .collect(),
+        workouts,
         current_page: Page::Main,
         show_workout_deletion_confirmation: false,
         workout_selection: None,
