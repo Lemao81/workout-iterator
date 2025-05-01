@@ -43,8 +43,9 @@ fn main() -> iced::Result {
 bitflags! {
     struct OperationFlags: u8 {
         const CanAdd = 1;
-        const CanDelete = 1 << 1;
-        const CanClear = 1 << 2;
+        const CanUpdate = 1 << 1;
+        const CanDelete = 1 << 2;
+        const CanClear = 1 << 3;
     }
 }
 
@@ -68,6 +69,7 @@ impl AppState {
             Message::WorkoutSelection(workout_option) => self.on_workout_selection(workout_option),
             Message::WorkoutInput(input_option) => self.on_workout_input(input_option),
             Message::AddWorkout => self.on_add_workout(),
+            Message::UpdateWorkout => self.on_update_workout(),
             Message::InitiateWorkoutDeletion => self.on_initiate_workout_deletion(),
             Message::InitiateClearance => self.on_initiate_clearance(),
         }
@@ -112,12 +114,16 @@ impl AppState {
             self.workout_selection = workout_option;
         }
 
+        if let Some(workout) = self.workout_selection.clone() {
+            self.workout_input = Some(workout.text)
+        }
+
         self.update_operation_flags();
     }
 
     fn on_workout_input(&mut self, workout_input: Option<String>) {
         self.workout_input = workout_input.clone();
-        self.operation_flags.set(OperationFlags::CanAdd, matches!(workout_input, Some(input) if self.workouts.iter().all(|s| !input.eq(&s.text))));
+        self.update_operation_flags();
     }
 
     fn on_add_workout(&mut self) {
@@ -133,6 +139,26 @@ impl AppState {
         self.write_workouts_state();
     }
 
+    fn on_update_workout(&mut self) {
+        let input = match self.workout_input.clone() {
+            None => return,
+            Some(s) if s.is_empty() => return,
+            Some(s) if self.workouts.iter().any(|w| w.text.eq(&s)) => return,
+            Some(s) => s,
+        };
+
+        let workout = match self.workout_selection.clone() {
+            None => return,
+            Some(w) => w,
+        };
+
+        if let Some(position) = self.workouts.iter().position(|w| w.id == workout.id) {
+            self.workouts[position].text = input;
+            self.update_operation_flags();
+            self.write_workouts_state();
+        }
+    }
+
     fn on_initiate_workout_deletion(&mut self) {
         self.show_confirmation = Some(ConfirmationTopic::WorkoutDeletion);
     }
@@ -143,8 +169,8 @@ impl AppState {
 
     fn delete_workout(&mut self) {
         let workout = match self.workout_selection.clone() {
-            Some(w) => w,
             None => return,
+            Some(w) => w,
         };
 
         if let Some(position) = self.workouts.iter().position(|w| w.id == workout.id) {
@@ -160,6 +186,10 @@ impl AppState {
         }
     }
 
+    fn has_unique_input(&self) -> bool {
+        matches!(self.workout_input.clone(), Some(input) if self.workouts.iter().all(|s| !input.eq(&s.text)))
+    }
+
     fn clear_workouts(&mut self) {
         self.workouts.clear();
         self.workout_index = 0;
@@ -171,7 +201,11 @@ impl AppState {
 
     fn update_operation_flags(&mut self) {
         self.operation_flags
-            .set(OperationFlags::CanAdd, self.workout_selection.is_none());
+            .set(OperationFlags::CanAdd, self.has_unique_input());
+        self.operation_flags.set(
+            OperationFlags::CanUpdate,
+            self.workout_selection.is_some() && self.has_unique_input(),
+        );
         self.operation_flags
             .set(OperationFlags::CanDelete, self.workout_selection.is_some());
         self.operation_flags
@@ -254,6 +288,7 @@ enum Message {
     WorkoutSelection(Option<Workout>),
     WorkoutInput(Option<String>),
     AddWorkout,
+    UpdateWorkout,
     InitiateWorkoutDeletion,
     InitiateClearance,
 }

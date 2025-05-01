@@ -79,6 +79,12 @@ fn create_button_panel<'a>(
             .contains(OperationFlags::CanAdd)
             .then_some(Message::AddWorkout),
     );
+    let update_btn = button(text("Update")).on_press_maybe(
+        flags
+            .contains(OperationFlags::CanUpdate)
+            .then_some(Message::UpdateWorkout),
+    );
+    let add_update_row = Row::new().push(add_btn).push(update_btn).spacing(SPACING_S);
 
     let move_up_btn = button(text("\u{2191}"));
     let move_down_btn = button(text("\u{2193}"));
@@ -101,7 +107,7 @@ fn create_button_panel<'a>(
 
     Column::new()
         .push(add_input)
-        .push(add_btn)
+        .push(add_update_row)
         .push(Space::with_height(SPACING_M))
         .push(edit_row)
         .push(Space::with_height(SPACING_M))
