@@ -46,6 +46,8 @@ bitflags! {
         const CanUpdate = 1 << 1;
         const CanDelete = 1 << 2;
         const CanClear = 1 << 3;
+        const CanMoveUp = 1 << 4;
+        const CanMoveDown = 1 << 5;
     }
 }
 
@@ -72,6 +74,8 @@ impl AppState {
             Message::UpdateWorkout => self.on_update_workout(),
             Message::InitiateWorkoutDeletion => self.on_initiate_workout_deletion(),
             Message::InitiateClearance => self.on_initiate_clearance(),
+            Message::MoveWorkoutUp => self.on_move_workout_up(),
+            Message::MoveWorkoutDown => self.on_move_workout_down(),
         }
     }
 
@@ -90,6 +94,7 @@ impl AppState {
     fn on_close_settings(&mut self) {
         self.current_page = Page::Main;
         self.reset_input();
+        self.update_operation_flags();
     }
 
     fn on_close_confirmation_dialog(&mut self, payload: ConfirmationPayload) {
@@ -149,7 +154,7 @@ impl AppState {
             Some(w) => w,
         };
 
-        if let Some(position) = self.workouts.iter().position(|w| w.id == workout.id) {
+        if let Some(position) = self.get_position(workout) {
             self.workouts[position].text = input;
             self.update_operation_flags();
             self.write_workouts_state();
@@ -164,13 +169,49 @@ impl AppState {
         self.show_confirmation = Some(ConfirmationTopic::Clearance);
     }
 
+    fn on_move_workout_up(&mut self) {
+        let workout = match self.workout_selection.clone() {
+            None => return,
+            Some(w) => w,
+        };
+
+        let position = match self.get_position(workout.clone()) {
+            None => return,
+            Some(p) if p <= 0 => return,
+            Some(p) => p,
+        };
+
+        let removed = self.workouts.remove(position);
+        self.workouts.insert(position - 1, removed);
+        self.update_operation_flags();
+        self.write_workouts_state();
+    }
+
+    fn on_move_workout_down(&mut self) {
+        let workout = match self.workout_selection.clone() {
+            None => return,
+            Some(w) => w,
+        };
+
+        let position = match self.get_position(workout.clone()) {
+            None => return,
+            Some(p) if p >= self.workouts.iter().count() - 1 => return,
+            Some(p) => p,
+        };
+
+        let removed = self.workouts.remove(position);
+        self.workouts.insert(position + 1, removed);
+        self.update_operation_flags();
+        self.write_workouts_state();
+    }
+
     fn delete_workout(&mut self) {
         let workout = match self.workout_selection.clone() {
             None => return,
             Some(w) => w,
         };
 
-        if let Some(position) = self.workouts.iter().position(|w| w.id == workout.id) {
+        if let Some(position) = self.get_position(workout) {
             self.workouts.remove(position);
             if position <= self.workout_index as usize {
                 self.workout_index = max(self.workout_index - 1, 0);
@@ -216,6 +257,24 @@ impl AppState {
             .set(OperationFlags::CanDelete, self.workout_selection.is_some());
         self.operation_flags
             .set(OperationFlags::CanClear, self.workouts.iter().count() > 0);
+        self.operation_flags.set(
+            OperationFlags::CanMoveUp,
+            self.workout_selection
+                .clone()
+                .and_then(|w| self.get_position(w))
+                .map_or(false, |p| p > 0),
+        );
+        self.operation_flags.set(
+            OperationFlags::CanMoveDown,
+            self.workout_selection
+                .clone()
+                .and_then(|w| self.get_position(w))
+                .map_or(false, |p| p < self.workouts.iter().count() - 1),
+        );
+    }
+
+    fn get_position(&self, workout: Workout) -> Option<usize> {
+        self.workouts.iter().position(|w| w.id == workout.id)
     }
 
     fn view(&self) -> Element<Message> {
@@ -297,6 +356,8 @@ enum Message {
     UpdateWorkout,
     InitiateWorkoutDeletion,
     InitiateClearance,
+    MoveWorkoutUp,
+    MoveWorkoutDown,
 }
 
 #[derive(Debug, Clone)]

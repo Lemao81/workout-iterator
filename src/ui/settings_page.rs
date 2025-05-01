@@ -86,8 +86,16 @@ fn create_button_panel<'a>(
     );
     let add_update_row = Row::new().push(add_btn).push(update_btn).spacing(SPACING_S);
 
-    let move_up_btn = button(text("\u{2191}"));
-    let move_down_btn = button(text("\u{2193}"));
+    let move_up_btn = button(text("\u{2191}")).on_press_maybe(
+        flags
+            .contains(OperationFlags::CanMoveUp)
+            .then_some(Message::MoveWorkoutUp),
+    );
+    let move_down_btn = button(text("\u{2193}")).on_press_maybe(
+        flags
+            .contains(OperationFlags::CanMoveDown)
+            .then_some(Message::MoveWorkoutDown),
+    );
     let remove_btn = button(text("X")).on_press_maybe(
         flags
             .contains(OperationFlags::CanDelete)
