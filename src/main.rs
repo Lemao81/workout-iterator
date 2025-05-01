@@ -89,6 +89,7 @@ impl AppState {
 
     fn on_close_settings(&mut self) {
         self.current_page = Page::Main;
+        self.reset_input();
     }
 
     fn on_close_confirmation_dialog(&mut self, payload: ConfirmationPayload) {
@@ -175,11 +176,18 @@ impl AppState {
                 self.workout_index = max(self.workout_index - 1, 0);
             }
 
-            self.workout_selection = None;
-            self.workout_input = None;
+            self.reset_input();
             self.update_operation_flags();
             self.write_workouts_state();
         }
+    }
+
+    fn clear_workouts(&mut self) {
+        self.workouts.clear();
+        self.workout_index = 0;
+        self.reset_input();
+        self.update_operation_flags();
+        self.write_workouts_state();
     }
 
     fn has_unique_input(&self) -> bool {
@@ -192,13 +200,9 @@ impl AppState {
             .filter(|s| !s.is_empty() && !self.workouts.iter().any(|w| w.text.eq(s)))
     }
 
-    fn clear_workouts(&mut self) {
-        self.workouts.clear();
-        self.workout_index = 0;
+    fn reset_input(&mut self) {
         self.workout_selection = None;
         self.workout_input = None;
-        self.update_operation_flags();
-        self.write_workouts_state();
     }
 
     fn update_operation_flags(&mut self) {
