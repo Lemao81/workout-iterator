@@ -1,6 +1,6 @@
 use crate::Message::WorkoutSelection;
 use crate::helper::DevBackgroundExt;
-use crate::ui::{SPACING_M, SPACING_S, SPACING_X, WINDOW_HEIGHT};
+use crate::ui::{SPACING_M, SPACING_S, SPACING_X, WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::{Message, Workout};
 use iced::widget::button::Style;
 use iced::widget::scrollable::{Direction, Scrollbar};
@@ -63,6 +63,7 @@ fn create_workouts_list<'a>(
                 column.push(button)
             },
         )
+        .width(WINDOW_WIDTH / 2.0)
         .padding(Padding::new(SPACING_S).right(SPACING_X))
         .spacing(2);
 
@@ -82,7 +83,7 @@ fn create_button_panel<'a>(
     let move_up_btn = button(text("\u{2191}"));
     let move_down_btn = button(text("\u{2193}"));
     let remove_btn =
-        button(text("x")).on_press_maybe(can_delete.then_some(Message::InitiateWorkoutDeletion));
+        button(text("X")).on_press_maybe(can_delete.then_some(Message::InitiateWorkoutDeletion));
     let edit_row = Row::new()
         .push(move_up_btn)
         .push(move_down_btn)

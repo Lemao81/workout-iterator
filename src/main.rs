@@ -10,6 +10,7 @@ use crate::ui::confirmation_dialog::{
 use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use iced::{Element, Task};
+use std::cmp::max;
 use uuid::Uuid;
 
 fn main() -> iced::Result {
@@ -101,8 +102,7 @@ impl AppState {
             self.workout_selection = workout_option;
         }
 
-        self.can_add = self.workout_selection.is_none();
-        self.can_delete = self.workout_selection.is_some();
+        self.update_state();
     }
 
     fn on_workout_input(&mut self, workout_input: Option<String>) {
@@ -127,7 +127,29 @@ impl AppState {
         self.show_workout_deletion_confirmation = true;
     }
 
-    fn delete_workout(&mut self) {}
+    fn delete_workout(&mut self) {
+        let workout = match self.workout_selection.clone() {
+            Some(w) => w,
+            None => return,
+        };
+
+        if let Some(position) = self.workouts.iter().position(|w| w.id == workout.id) {
+            self.workouts.remove(position);
+            if position <= self.workout_index as usize {
+                self.workout_index = max(self.workout_index - 1, 0);
+            }
+            
+            self.workout_selection = None;
+            self.workout_input = None;
+            self.update_state();
+            self.write_workouts_state();
+        }
+    }
+
+    fn update_state(&mut self) {
+        self.can_add = self.workout_selection.is_none();
+        self.can_delete = self.workout_selection.is_some();
+    }
 
     fn view(&self) -> Element<Message> {
         let page = match self.current_page {

@@ -2,4 +2,5 @@
 .idea/
 **/dev/
 workouts.json
+workouts_backup.json
 error.log
