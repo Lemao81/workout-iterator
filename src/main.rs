@@ -127,10 +127,8 @@ impl AppState {
     }
 
     fn on_add_workout(&mut self) {
-        let input = match self.workout_input.clone() {
+        let input = match self.get_valid_input() {
             None => return,
-            Some(s) if s.is_empty() => return,
-            Some(s) if self.workouts.iter().any(|w| w.text.eq(&s)) => return,
             Some(s) => s,
         };
 
@@ -140,10 +138,8 @@ impl AppState {
     }
 
     fn on_update_workout(&mut self) {
-        let input = match self.workout_input.clone() {
+        let input = match self.get_valid_input() {
             None => return,
-            Some(s) if s.is_empty() => return,
-            Some(s) if self.workouts.iter().any(|w| w.text.eq(&s)) => return,
             Some(s) => s,
         };
 
@@ -188,6 +184,12 @@ impl AppState {
 
     fn has_unique_input(&self) -> bool {
         matches!(self.workout_input.clone(), Some(input) if self.workouts.iter().all(|s| !input.eq(&s.text)))
+    }
+
+    fn get_valid_input(&mut self) -> Option<String> {
+        self.workout_input
+            .clone()
+            .filter(|s| !s.is_empty() && !self.workouts.iter().any(|w| w.text.eq(s)))
     }
 
     fn clear_workouts(&mut self) {
