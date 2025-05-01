@@ -1,8 +1,8 @@
-﻿use crate::ui::SPACING_XL;
-use crate::Message;
+﻿use crate::Message;
+use crate::ui::{SPACING_M, SPACING_XL};
 use iced::alignment::Horizontal;
 use iced::widget::container::Style;
-use iced::widget::{button, center, text, Column, Row, Space};
+use iced::widget::{Column, Row, Space, button, center, text};
 use iced::{Border, Color, Element};
 
 const DIALOG_WIDTH: f32 = 230.0;
@@ -11,6 +11,7 @@ const DIALOG_HEIGHT: f32 = 130.0;
 #[derive(Debug, Clone)]
 pub enum ConfirmationTopic {
     WorkoutDeletion,
+    Clearance,
 }
 
 #[derive(Debug, Clone)]
@@ -21,10 +22,10 @@ pub struct ConfirmationPayload {
 }
 
 impl ConfirmationPayload {
-    pub fn new(topic: ConfirmationTopic) -> ConfirmationPayload {
+    pub fn new(topic: ConfirmationTopic, message: Option<String>) -> ConfirmationPayload {
         ConfirmationPayload {
             topic,
-            message: None,
+            message,
             confirmed: false,
         }
     }
@@ -33,7 +34,7 @@ impl ConfirmationPayload {
 pub fn create_confirmation_dialog<'a>(
     payload: ConfirmationPayload,
 ) -> impl Into<Element<'a, Message>> {
-    let message = text(
+    let message_txt = text(
         payload
             .message
             .clone()
@@ -50,13 +51,14 @@ pub fn create_confirmation_dialog<'a>(
 
     center(
         Column::new()
-            .push(message)
+            .push(message_txt)
             .push(Space::with_height(SPACING_XL))
             .push(button_row)
             .align_x(Horizontal::Center),
     )
     .width(DIALOG_WIDTH)
     .height(DIALOG_HEIGHT)
+    .padding(SPACING_M)
     .style(|_| Style {
         background: Some(Color::BLACK.into()),
         border: Border {

@@ -15,20 +15,21 @@ use uuid::Uuid;
 
 fn main() -> iced::Result {
     let workouts_state = read_workouts_state();
-    let workouts = workouts_state
+    let workouts: Vec<_> = workouts_state
         .workouts
         .into_iter()
         .map(|s| Workout::new(s))
         .collect();
     let app_state = AppState {
         workout_index: workouts_state.index,
-        workouts,
+        workouts: workouts.clone(),
         current_page: Page::Main,
-        show_workout_deletion_confirmation: false,
+        show_confirmation: None,
         workout_selection: None,
         workout_input: None,
         can_add: false,
         can_delete: false,
+        can_clear: workouts.iter().count() > 0,
     };
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
@@ -41,11 +42,12 @@ struct AppState {
     workout_index: i8,
     workouts: Vec<Workout>,
     current_page: Page,
-    show_workout_deletion_confirmation: bool,
+    show_confirmation: Option<ConfirmationTopic>,
     workout_selection: Option<Workout>,
     workout_input: Option<String>,
     can_add: bool,
     can_delete: bool,
+    can_clear: bool,
 }
 
 impl AppState {
@@ -59,6 +61,7 @@ impl AppState {
             Message::WorkoutInput(input_option) => self.on_workout_input(input_option),
             Message::AddWorkout => self.on_add_workout(),
             Message::InitiateWorkoutDeletion => self.on_initiate_workout_deletion(),
+            Message::InitiateClearance => self.on_initiate_clearance(),
         }
     }
 
@@ -79,14 +82,13 @@ impl AppState {
     }
 
     fn on_close_confirmation_dialog(&mut self, payload: ConfirmationPayload) {
-        match payload.topic {
-            ConfirmationTopic::WorkoutDeletion => {
-                self.show_workout_deletion_confirmation = false;
-                if payload.confirmed {
-                    self.delete_workout();
-                }
-            }
-        };
+        self.show_confirmation = None;
+        if payload.confirmed {
+            match payload.topic {
+                ConfirmationTopic::WorkoutDeletion => self.delete_workout(),
+                ConfirmationTopic::Clearance => self.clear_workouts(),
+            };
+        }
     }
 
     fn on_workout_selection(&mut self, workout_option: Option<Workout>) {
@@ -120,11 +122,16 @@ impl AppState {
         };
 
         self.workouts.push(Workout::new(input));
+        self.update_state();
         self.write_workouts_state();
     }
 
     fn on_initiate_workout_deletion(&mut self) {
-        self.show_workout_deletion_confirmation = true;
+        self.show_confirmation = Some(ConfirmationTopic::WorkoutDeletion);
+    }
+
+    fn on_initiate_clearance(&mut self) {
+        self.show_confirmation = Some(ConfirmationTopic::Clearance);
     }
 
     fn delete_workout(&mut self) {
@@ -138,7 +145,7 @@ impl AppState {
             if position <= self.workout_index as usize {
                 self.workout_index = max(self.workout_index - 1, 0);
             }
-            
+
             self.workout_selection = None;
             self.workout_input = None;
             self.update_state();
@@ -146,9 +153,19 @@ impl AppState {
         }
     }
 
+    fn clear_workouts(&mut self) {
+        self.workouts.clear();
+        self.workout_index = 0;
+        self.workout_selection = None;
+        self.workout_input = None;
+        self.update_state();
+        self.write_workouts_state();
+    }
+
     fn update_state(&mut self) {
         self.can_add = self.workout_selection.is_none();
         self.can_delete = self.workout_selection.is_some();
+        self.can_clear = self.workouts.iter().count() > 0;
     }
 
     fn view(&self) -> Element<Message> {
@@ -157,8 +174,14 @@ impl AppState {
             Page::Settings => create_settings_page(self.create_settings_view_model()).into(),
         };
 
-        if self.show_workout_deletion_confirmation {
-            let payload = ConfirmationPayload::new(ConfirmationTopic::WorkoutDeletion);
+        if let Some(topic) = self.show_confirmation.clone() {
+            let message = match topic {
+                ConfirmationTopic::WorkoutDeletion => None,
+                ConfirmationTopic::Clearance => {
+                    Some("Removing all workouts. Are you sure?".to_owned())
+                }
+            };
+            let payload = ConfirmationPayload::new(topic, message);
             modal(
                 page,
                 create_confirmation_dialog(payload.clone()),
@@ -198,6 +221,7 @@ impl AppState {
             workout_input: self.workout_input.clone(),
             can_add: self.can_add,
             can_delete: self.can_delete,
+            can_clear: self.can_clear,
         }
     }
 
@@ -223,6 +247,7 @@ enum Message {
     WorkoutInput(Option<String>),
     AddWorkout,
     InitiateWorkoutDeletion,
+    InitiateClearance,
 }
 
 #[derive(Debug, Clone)]

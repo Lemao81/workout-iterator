@@ -17,6 +17,7 @@ pub struct SettingsViewModel {
     pub workout_input: Option<String>,
     pub can_add: bool,
     pub can_delete: bool,
+    pub can_clear: bool,
 }
 
 pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Element<'a, Message>> {
@@ -27,6 +28,7 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
             view_model.workout_input,
             view_model.can_add,
             view_model.can_delete,
+            view_model.can_clear,
         ))
         .push(create_footer())
 }
@@ -37,10 +39,16 @@ fn create_body<'a>(
     workout_input: Option<String>,
     can_add: bool,
     can_delete: bool,
+    can_clear: bool,
 ) -> impl Into<Element<'a, Message>> {
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
-        .push(create_button_panel(workout_input, can_add, can_delete))
+        .push(create_button_panel(
+            workout_input,
+            can_add,
+            can_delete,
+            can_clear,
+        ))
         .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
@@ -74,6 +82,7 @@ fn create_button_panel<'a>(
     workout_input: Option<String>,
     can_add: bool,
     can_delete: bool,
+    can_clear: bool,
 ) -> impl Into<Element<'a, Message>> {
     let input_value = workout_input.clone().map_or("".to_owned(), move |s| s);
     let add_input = text_input("New workout", &input_value)
@@ -90,12 +99,16 @@ fn create_button_panel<'a>(
         .push(Space::with_width(SPACING_M))
         .push(remove_btn)
         .spacing(SPACING_S);
+    let clear_btn =
+        button(text("Clear")).on_press_maybe(can_clear.then_some(Message::InitiateClearance));
 
     Column::new()
         .push(add_input)
         .push(add_btn)
         .push(Space::with_height(SPACING_M))
         .push(edit_row)
+        .push(Space::with_height(SPACING_M))
+        .push(clear_btn)
         .padding(SPACING_M)
         .spacing(SPACING_S)
 }
