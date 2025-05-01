@@ -4017,6 +4017,7 @@ dependencies = [
 name = "workout-iterator"
 version = "0.1.0"
 dependencies = [
+ "bitflags 2.9.0",
  "chrono",
  "iced",
  "rand 0.9.1",

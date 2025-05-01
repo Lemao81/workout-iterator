@@ -9,6 +9,7 @@ use crate::ui::confirmation_dialog::{
 };
 use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
+use bitflags::bitflags;
 use iced::{Element, Task};
 use std::cmp::max;
 use uuid::Uuid;
@@ -20,22 +21,31 @@ fn main() -> iced::Result {
         .into_iter()
         .map(|s| Workout::new(s))
         .collect();
-    let app_state = AppState {
+    let mut app_state = AppState {
         workout_index: workouts_state.index,
         workouts: workouts.clone(),
         current_page: Page::Main,
         show_confirmation: None,
         workout_selection: None,
         workout_input: None,
-        can_add: false,
-        can_delete: false,
-        can_clear: workouts.iter().count() > 0,
+        operation_flags: OperationFlags::empty(),
     };
+    app_state
+        .operation_flags
+        .set(OperationFlags::CanClear, workouts.iter().count() > 0);
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
         .window_size((WINDOW_WIDTH, WINDOW_HEIGHT))
         .resizable(false)
         .run_with(|| (app_state, Task::none()))
+}
+
+bitflags! {
+    struct OperationFlags: u8 {
+        const CanAdd = 1;
+        const CanDelete = 1 << 1;
+        const CanClear = 1 << 2;
+    }
 }
 
 struct AppState {
@@ -45,9 +55,7 @@ struct AppState {
     show_confirmation: Option<ConfirmationTopic>,
     workout_selection: Option<Workout>,
     workout_input: Option<String>,
-    can_add: bool,
-    can_delete: bool,
-    can_clear: bool,
+    operation_flags: OperationFlags,
 }
 
 impl AppState {
@@ -104,13 +112,12 @@ impl AppState {
             self.workout_selection = workout_option;
         }
 
-        self.update_state();
+        self.update_operation_flags();
     }
 
     fn on_workout_input(&mut self, workout_input: Option<String>) {
         self.workout_input = workout_input.clone();
-        self.can_add =
-            matches!(workout_input, Some(input) if self.workouts.iter().all(|s| !input.eq(&s.text)))
+        self.operation_flags.set(OperationFlags::CanAdd, matches!(workout_input, Some(input) if self.workouts.iter().all(|s| !input.eq(&s.text))));
     }
 
     fn on_add_workout(&mut self) {
@@ -122,7 +129,7 @@ impl AppState {
         };
 
         self.workouts.push(Workout::new(input));
-        self.update_state();
+        self.update_operation_flags();
         self.write_workouts_state();
     }
 
@@ -148,7 +155,7 @@ impl AppState {
 
             self.workout_selection = None;
             self.workout_input = None;
-            self.update_state();
+            self.update_operation_flags();
             self.write_workouts_state();
         }
     }
@@ -158,14 +165,17 @@ impl AppState {
         self.workout_index = 0;
         self.workout_selection = None;
         self.workout_input = None;
-        self.update_state();
+        self.update_operation_flags();
         self.write_workouts_state();
     }
 
-    fn update_state(&mut self) {
-        self.can_add = self.workout_selection.is_none();
-        self.can_delete = self.workout_selection.is_some();
-        self.can_clear = self.workouts.iter().count() > 0;
+    fn update_operation_flags(&mut self) {
+        self.operation_flags
+            .set(OperationFlags::CanAdd, self.workout_selection.is_none());
+        self.operation_flags
+            .set(OperationFlags::CanDelete, self.workout_selection.is_some());
+        self.operation_flags
+            .set(OperationFlags::CanClear, self.workouts.iter().count() > 0);
     }
 
     fn view(&self) -> Element<Message> {
@@ -219,9 +229,7 @@ impl AppState {
             workouts: self.workouts.clone(),
             workout_selection: self.workout_selection.clone(),
             workout_input: self.workout_input.clone(),
-            can_add: self.can_add,
-            can_delete: self.can_delete,
-            can_clear: self.can_clear,
+            operation_flags: &self.operation_flags,
         }
     }
 

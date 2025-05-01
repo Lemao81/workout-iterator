@@ -1,7 +1,7 @@
 use crate::Message::WorkoutSelection;
 use crate::helper::DevBackgroundExt;
 use crate::ui::{SPACING_M, SPACING_S, SPACING_X, WINDOW_HEIGHT, WINDOW_WIDTH};
-use crate::{Message, Workout};
+use crate::{Message, OperationFlags, Workout};
 use iced::widget::button::Style;
 use iced::widget::scrollable::{Direction, Scrollbar};
 use iced::widget::{
@@ -11,13 +11,11 @@ use iced::{Border, Color, Element, Length, Padding};
 
 const FOOTER_HEIGHT: f32 = 50.0;
 
-pub struct SettingsViewModel {
+pub struct SettingsViewModel<'a> {
     pub workouts: Vec<Workout>,
     pub workout_selection: Option<Workout>,
     pub workout_input: Option<String>,
-    pub can_add: bool,
-    pub can_delete: bool,
-    pub can_clear: bool,
+    pub operation_flags: &'a OperationFlags,
 }
 
 pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Element<'a, Message>> {
@@ -26,9 +24,7 @@ pub fn create_settings_page<'a>(view_model: SettingsViewModel) -> impl Into<Elem
             view_model.workouts,
             view_model.workout_selection,
             view_model.workout_input,
-            view_model.can_add,
-            view_model.can_delete,
-            view_model.can_clear,
+            view_model.operation_flags,
         ))
         .push(create_footer())
 }
@@ -37,18 +33,11 @@ fn create_body<'a>(
     workouts: Vec<Workout>,
     workout_selection: Option<Workout>,
     workout_input: Option<String>,
-    can_add: bool,
-    can_delete: bool,
-    can_clear: bool,
+    flags: &OperationFlags,
 ) -> impl Into<Element<'a, Message>> {
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
-        .push(create_button_panel(
-            workout_input,
-            can_add,
-            can_delete,
-            can_clear,
-        ))
+        .push(create_button_panel(workout_input, flags))
         .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
@@ -80,27 +69,35 @@ fn create_workouts_list<'a>(
 
 fn create_button_panel<'a>(
     workout_input: Option<String>,
-    can_add: bool,
-    can_delete: bool,
-    can_clear: bool,
+    flags: &OperationFlags,
 ) -> impl Into<Element<'a, Message>> {
     let input_value = workout_input.clone().map_or("".to_owned(), move |s| s);
     let add_input = text_input("New workout", &input_value)
         .on_input(|s| Message::WorkoutInput(Some(s).filter(|s| !s.is_empty())));
-    let add_btn = button(text("Add")).on_press_maybe(can_add.then_some(Message::AddWorkout));
+    let add_btn = button(text("Add")).on_press_maybe(
+        flags
+            .contains(OperationFlags::CanAdd)
+            .then_some(Message::AddWorkout),
+    );
 
     let move_up_btn = button(text("\u{2191}"));
     let move_down_btn = button(text("\u{2193}"));
-    let remove_btn =
-        button(text("X")).on_press_maybe(can_delete.then_some(Message::InitiateWorkoutDeletion));
+    let remove_btn = button(text("X")).on_press_maybe(
+        flags
+            .contains(OperationFlags::CanDelete)
+            .then_some(Message::InitiateWorkoutDeletion),
+    );
     let edit_row = Row::new()
         .push(move_up_btn)
         .push(move_down_btn)
         .push(Space::with_width(SPACING_M))
         .push(remove_btn)
         .spacing(SPACING_S);
-    let clear_btn =
-        button(text("Clear")).on_press_maybe(can_clear.then_some(Message::InitiateClearance));
+    let clear_btn = button(text("Clear")).on_press_maybe(
+        flags
+            .contains(OperationFlags::CanClear)
+            .then_some(Message::InitiateClearance),
+    );
 
     Column::new()
         .push(add_input)
