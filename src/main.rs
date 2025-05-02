@@ -12,9 +12,12 @@ use crate::ui::confirmation_dialog::{
 use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
 use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use bitflags::bitflags;
-use iced::{Element, Task};
+use iced::window::Settings;
+use iced::{Element, Size, Task, window};
 use std::cmp::max;
 use uuid::Uuid;
+
+const ICON_PATH: &str = "./resources/icon.ico";
 
 fn main() -> iced::Result {
     let workouts_state = read_workouts_state();
@@ -37,7 +40,11 @@ fn main() -> iced::Result {
         .set(OperationFlags::CanClear, workouts.iter().count() > 0);
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
-        .window_size((WINDOW_WIDTH, WINDOW_HEIGHT))
+        .window(Settings {
+            size: Size::new(WINDOW_WIDTH, WINDOW_HEIGHT),
+            icon: window::icon::from_file(ICON_PATH).ok(),
+            ..Settings::default()
+        })
         .resizable(false)
         .run_with(|| (app_state, Task::none()))
 }
