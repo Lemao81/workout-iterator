@@ -15,9 +15,10 @@ use bitflags::bitflags;
 use iced::window::Settings;
 use iced::{Element, Size, Task, window};
 use std::cmp::max;
+use image::ImageFormat;
 use uuid::Uuid;
 
-const ICON_PATH: &str = "./resources/icon.ico";
+const ICON_BYTES: &[u8] = include_bytes!("../resources/icon.ico");
 
 fn main() -> iced::Result {
     let workouts_state = read_workouts_state();
@@ -42,7 +43,7 @@ fn main() -> iced::Result {
     iced::application("Workout Iterator", AppState::update, AppState::view)
         .window(Settings {
             size: Size::new(WINDOW_WIDTH, WINDOW_HEIGHT),
-            icon: window::icon::from_file(ICON_PATH).ok(),
+            icon: window::icon::from_file_data(ICON_BYTES, Some(ImageFormat::Ico)).ok(),
             ..Settings::default()
         })
         .resizable(false)

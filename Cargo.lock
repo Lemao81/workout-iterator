@@ -9,6 +9,7 @@ dependencies = [
  "bitflags 2.9.0",
  "chrono",
  "iced",
+ "image",
  "rand 0.9.1",
  "serde",
  "serde_json",
