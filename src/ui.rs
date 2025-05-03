@@ -1,9 +1,10 @@
 pub mod confirmation_dialog;
 pub mod settings_page;
 
-use crate::helper::ContainerExtensions;
 use crate::Message;
-use iced::widget::{button, center, horizontal_space, text, Column, Container, Row};
+use crate::helper::ContainerExtensions;
+use iced::widget::tooltip::Position;
+use iced::widget::{Column, Container, Row, Tooltip, button, center, horizontal_space, text};
 use iced::{Element, Padding};
 
 pub const WINDOW_WIDTH: f32 = 500.0;
@@ -37,7 +38,8 @@ pub fn create_main_page<'a>(view_model: MainViewModel) -> impl Into<Element<'a, 
 
 fn create_header<'a>() -> impl Into<Element<'a, Message>> {
     let settings_btn = button("S").on_press(Message::OpenSettings);
-    let row = Row::new().push(horizontal_space()).push(settings_btn);
+    let settings_tooltip = Tooltip::new(settings_btn, text("Settings").size(14.0), Position::Left);
+    let row = Row::new().push(horizontal_space()).push(settings_tooltip);
 
     center(row)
         .height(HEADER_HEIGHT)
