@@ -1,11 +1,11 @@
-use crate::Message::WorkoutSelection;
-use crate::helper::DevBackgroundExt;
+use crate::helper::ContainerExtensions;
 use crate::ui::{SPACING_M, SPACING_S, SPACING_X, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::Message::WorkoutSelection;
 use crate::{Message, OperationFlags, Workout};
-use iced::widget::button::Style;
 use iced::widget::scrollable::{Direction, Scrollbar};
 use iced::widget::{
-    Column, Row, Scrollable, Space, button, center, horizontal_space, text, text_input,
+    button, center, horizontal_space, text, text_input, Column, Container, Row, Scrollable,
+    Space,
 };
 use iced::{Border, Color, Element, Length, Padding};
 
@@ -38,6 +38,7 @@ fn create_body<'a>(
     Row::new()
         .push(create_workouts_list(workouts, workout_selection))
         .push(create_button_panel(workout_input, flags))
+        .padding(SPACING_S)
         .height(WINDOW_HEIGHT - FOOTER_HEIGHT)
 }
 
@@ -60,11 +61,15 @@ fn create_workouts_list<'a>(
                 column.push(button)
             },
         )
-        .width(WINDOW_WIDTH / 2.0)
-        .padding(Padding::new(SPACING_S).right(SPACING_X))
+        .padding(Padding::ZERO.right(SPACING_X))
         .spacing(2);
+    let scrollable = Scrollable::with_direction(column, Direction::Vertical(Scrollbar::default()));
+    let container = Container::new(scrollable)
+        .width((WINDOW_WIDTH / 2.0) - 2.0 * SPACING_S)
+        .height(WINDOW_HEIGHT - FOOTER_HEIGHT - 2.0 * SPACING_S)
+        .background(20, 20, 20);
 
-    Scrollable::with_direction(column, Direction::Vertical(Scrollbar::default()))
+    Container::new(container).padding(Padding::new(SPACING_S))
 }
 
 fn create_button_panel<'a>(
@@ -120,7 +125,7 @@ fn create_button_panel<'a>(
         .push(edit_row)
         .push(Space::with_height(SPACING_M))
         .push(clear_btn)
-        .padding(SPACING_M)
+        .padding(SPACING_S)
         .spacing(SPACING_S)
 }
 
@@ -134,7 +139,7 @@ fn create_footer<'a>() -> impl Into<Element<'a, Message>> {
         .dev_background()
 }
 
-fn get_list_item_style(is_selected: bool) -> Style {
+fn get_list_item_style(is_selected: bool) -> button::Style {
     let background_color = if is_selected {
         Color {
             a: 0.1,
@@ -144,7 +149,7 @@ fn get_list_item_style(is_selected: bool) -> Style {
         Color::TRANSPARENT
     };
 
-    Style {
+    button::Style {
         background: Some(background_color.into()),
         text_color: Color::WHITE,
         border: Border {
@@ -152,6 +157,6 @@ fn get_list_item_style(is_selected: bool) -> Style {
             color: Color::WHITE,
             radius: 1.0.into(),
         },
-        ..Style::default()
+        ..button::Style::default()
     }
 }

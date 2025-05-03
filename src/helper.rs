@@ -1,6 +1,5 @@
 use crate::Message;
-use iced::widget::container::Style;
-use iced::widget::{Container, Stack, center, mouse_area, opaque};
+use iced::widget::{center, container, mouse_area, opaque, Container, Stack};
 use iced::{Background, Color, Element};
 use rand::Rng;
 
@@ -13,7 +12,7 @@ pub fn modal<'a>(
         .push(base_content)
         .push(opaque(
             mouse_area(center(opaque(modal_content)).style(|_| {
-                Style {
+                container::Style {
                     background: Some(
                         Color {
                             a: 0.8,
@@ -21,7 +20,7 @@ pub fn modal<'a>(
                         }
                         .into(),
                     ),
-                    ..Style::default()
+                    ..container::Style::default()
                 }
             }))
             .on_press(close_message),
@@ -29,11 +28,19 @@ pub fn modal<'a>(
         .into()
 }
 
-pub trait DevBackgroundExt<'a> {
+pub trait ContainerExtensions<'a> {
+    fn background(self, r: u8, g: u8, b: u8) -> Self;
     fn dev_background(self) -> Self;
 }
 
-impl DevBackgroundExt<'_> for Container<'_, Message> {
+impl ContainerExtensions<'_> for Container<'_, Message> {
+    fn background(self, r: u8, g: u8, b: u8) -> Self {
+        self.style(move |_| container::Style {
+            background: Some(Color::from_rgb8(r, g, b).into()),
+            ..container::Style::default()
+        })
+    }
+
     fn dev_background(self) -> Self {
         if !is_ui_dev() {
             return self;
@@ -41,7 +48,7 @@ impl DevBackgroundExt<'_> for Container<'_, Message> {
 
         self.style(move |_| {
             let mut rng = rand::rng();
-            Style::default().background(Background::Color(Color::from_rgba8(
+            container::Style::default().background(Background::Color(Color::from_rgba8(
                 rng.random_range(0..=255),
                 rng.random_range(0..=255),
                 rng.random_range(0..=255),

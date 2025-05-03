@@ -1,9 +1,9 @@
 pub mod confirmation_dialog;
 pub mod settings_page;
 
+use crate::helper::ContainerExtensions;
 use crate::Message;
-use crate::helper::DevBackgroundExt;
-use iced::widget::{Column, Container, Row, button, center, horizontal_space, text};
+use iced::widget::{button, center, horizontal_space, text, Column, Container, Row};
 use iced::{Element, Padding};
 
 pub const WINDOW_WIDTH: f32 = 500.0;
@@ -14,6 +14,7 @@ const SPACING_S: f32 = 5.0;
 const SPACING_M: f32 = 10.0;
 const SPACING_X: f32 = 15.0;
 const SPACING_XL: f32 = 20.0;
+const SPACING_XXL: f32 = 30.0;
 
 pub enum Page {
     Main,
@@ -53,11 +54,11 @@ fn create_body<'a>(workout: String, has_next: bool) -> impl Into<Element<'a, Mes
             } else {
                 None
             })
-            .padding(Padding::from([16.0, 28.0])),
+            .padding(Padding::from([SPACING_X, SPACING_XXL])),
     );
 
     Container::new(Column::new().push(text).push(button))
-        .padding(Padding::ZERO.top(20.0).bottom(20.0))
+        .padding(Padding::ZERO.top(SPACING_XL).bottom(SPACING_XL))
         .dev_background()
 }
 
