@@ -148,6 +148,7 @@ impl AppState {
         };
 
         self.workouts.push(Workout::new(input));
+        self.workout_input = None;
         self.update_operation_flags();
         self.write_workouts_state();
     }

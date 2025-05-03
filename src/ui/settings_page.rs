@@ -1,11 +1,10 @@
+use crate::Message::WorkoutSelection;
 use crate::helper::ContainerExtensions;
 use crate::ui::{SPACING_M, SPACING_S, SPACING_X, WINDOW_HEIGHT, WINDOW_WIDTH};
-use crate::Message::WorkoutSelection;
 use crate::{Message, OperationFlags, Workout};
 use iced::widget::scrollable::{Direction, Scrollbar};
 use iced::widget::{
-    button, center, horizontal_space, text, text_input, Column, Container, Row, Scrollable,
-    Space,
+    Column, Container, Row, Scrollable, Space, button, center, horizontal_space, text, text_input,
 };
 use iced::{Border, Color, Element, Length, Padding};
 
@@ -77,13 +76,13 @@ fn create_button_panel<'a>(
     flags: &OperationFlags,
 ) -> impl Into<Element<'a, Message>> {
     let input_value = workout_input.clone().map_or("".to_owned(), move |s| s);
+    let add_message_option = flags
+        .contains(OperationFlags::CanAdd)
+        .then_some(Message::AddWorkout);
     let add_input = text_input("New workout", &input_value)
-        .on_input(|s| Message::WorkoutInput(Some(s).filter(|s| !s.is_empty())));
-    let add_btn = button(text("Add")).on_press_maybe(
-        flags
-            .contains(OperationFlags::CanAdd)
-            .then_some(Message::AddWorkout),
-    );
+        .on_input(|s| Message::WorkoutInput(Some(s).filter(|s| !s.is_empty())))
+        .on_submit_maybe(add_message_option.clone());
+    let add_btn = button(text("Add")).on_press_maybe(add_message_option);
     let update_btn = button(text("Update")).on_press_maybe(
         flags
             .contains(OperationFlags::CanUpdate)
