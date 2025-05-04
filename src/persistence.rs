@@ -37,13 +37,14 @@ pub fn read_workouts_state() -> WorkoutsState {
         std::process::exit(1);
     }
 
-    let read_result = read_workouts_json();
-    if let Err(error) = read_result {
-        println!("{}", error);
-        std::process::exit(2);
-    }
+    let workouts_state = match read_workouts_json() {
+        Err(error) => {
+            println!("{}", error);
+            std::process::exit(2);
+        }
+        Ok(s) => s,
+    };
 
-    let workouts_state = read_result.unwrap();
     if let Err(error) = validate_workouts_state(&workouts_state) {
         println!("{}", error);
         std::process::exit(3);
