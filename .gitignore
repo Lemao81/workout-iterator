@@ -3,4 +3,5 @@
 **/dev/
 workouts.json
 workouts_backup.json
+window.json
 error.log

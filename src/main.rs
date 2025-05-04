@@ -5,17 +5,22 @@ mod persistence;
 mod ui;
 
 use crate::helper::modal;
-use crate::persistence::{WorkoutsState, log_error, read_workouts_state, write_workouts_state};
-use crate::ui::confirmation_dialog::{
-    ConfirmationPayload, ConfirmationTopic, create_confirmation_dialog,
+use crate::persistence::{
+    log_error, read_window_state, read_workouts_state, write_window_state, write_workouts_state, Position,
+    WorkoutsState,
 };
-use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
-use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
+use crate::ui::confirmation_dialog::{
+    create_confirmation_dialog, ConfirmationPayload, ConfirmationTopic,
+};
+use crate::ui::settings_page::{create_settings_page, SettingsViewModel};
+use crate::ui::{create_main_page, MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH};
 use bitflags::bitflags;
-use iced::window::Settings;
-use iced::{Element, Size, Task, window};
-use std::cmp::max;
+use iced::window::Position::{Default, Specific};
+use iced::window::{Id, Settings};
+use iced::Event::Window;
+use iced::{event, window, Element, Point, Size, Subscription, Task};
 use image::ImageFormat;
+use std::cmp::max;
 use uuid::Uuid;
 
 const ICON_BYTES: &[u8] = include_bytes!("../resources/icon.ico");
@@ -27,7 +32,9 @@ fn main() -> iced::Result {
         .into_iter()
         .map(|s| Workout::new(s))
         .collect();
+    let window_position = read_window_state();
     let mut app_state = AppState {
+        window_id: None,
         workout_index: workouts_state.index,
         workouts: workouts.clone(),
         current_page: Page::Main,
@@ -35,6 +42,7 @@ fn main() -> iced::Result {
         workout_selection: None,
         workout_input: None,
         operation_flags: OperationFlags::empty(),
+        window_position: window_position.clone(),
     };
     app_state
         .operation_flags
@@ -43,11 +51,14 @@ fn main() -> iced::Result {
     iced::application("Workout Iterator", AppState::update, AppState::view)
         .window(Settings {
             size: Size::new(WINDOW_WIDTH, WINDOW_HEIGHT),
+            position: window_position.map_or(Default, |p| Specific(Point::from([p.x,p.y]))),
             icon: window::icon::from_file_data(ICON_BYTES, Some(ImageFormat::Ico)).ok(),
+            exit_on_close_request: false,
             ..Settings::default()
         })
+        .subscription(AppState::window_subscription)
         .resizable(false)
-        .run_with(|| (app_state, Task::none()))
+        .run_with(|| (app_state, window::get_latest().map(Message::WindowId)))
 }
 
 bitflags! {
@@ -62,6 +73,7 @@ bitflags! {
 }
 
 struct AppState {
+    window_id: Option<Id>,
     workout_index: i8,
     workouts: Vec<Workout>,
     current_page: Page,
@@ -69,11 +81,13 @@ struct AppState {
     workout_selection: Option<Workout>,
     workout_input: Option<String>,
     operation_flags: OperationFlags,
+    window_position: Option<Position>,
 }
 
 impl AppState {
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::WindowId(id_option) => self.on_window_id(id_option),
             Message::NextWorkout => self.on_next_workout(),
             Message::OpenSettings => self.on_open_settings(),
             Message::CloseSettings => self.on_close_settings(),
@@ -86,28 +100,42 @@ impl AppState {
             Message::InitiateClearance => self.on_initiate_clearance(),
             Message::MoveWorkoutUp => self.on_move_workout_up(),
             Message::MoveWorkoutDown => self.on_move_workout_down(),
+            Message::WindowMoved(x, y) => self.on_window_moved(x, y),
+            Message::WindowCloseRequest => self.on_window_close_request(),
         }
     }
 
-    fn on_next_workout(&mut self) {
+    fn on_window_id(&mut self, id: Option<Id>) -> Task<Message> {
+        self.window_id = id;
+
+        Task::none()
+    }
+
+    fn on_next_workout(&mut self) -> Task<Message> {
         let count = self.workouts.iter().count() as i8;
         if count > 0 {
             self.workout_index = (self.workout_index + 1) % count;
             self.write_workouts_state();
         }
+
+        Task::none()
     }
 
-    fn on_open_settings(&mut self) {
+    fn on_open_settings(&mut self) -> Task<Message> {
         self.current_page = Page::Settings;
+
+        Task::none()
     }
 
-    fn on_close_settings(&mut self) {
+    fn on_close_settings(&mut self) -> Task<Message> {
         self.current_page = Page::Main;
         self.reset_input();
         self.update_operation_flags();
+
+        Task::none()
     }
 
-    fn on_close_confirmation_dialog(&mut self, payload: ConfirmationPayload) {
+    fn on_close_confirmation_dialog(&mut self, payload: ConfirmationPayload) -> Task<Message> {
         self.show_confirmation = None;
         if payload.confirmed {
             match payload.topic {
@@ -115,9 +143,11 @@ impl AppState {
                 ConfirmationTopic::Clearance => self.clear_workouts(),
             };
         }
+
+        Task::none()
     }
 
-    fn on_workout_selection(&mut self, workout_option: Option<Workout>) {
+    fn on_workout_selection(&mut self, workout_option: Option<Workout>) -> Task<Message> {
         if let (Some(selected), Some(select)) =
             (self.workout_selection.clone(), workout_option.clone())
         {
@@ -135,16 +165,20 @@ impl AppState {
         }
 
         self.update_operation_flags();
+
+        Task::none()
     }
 
-    fn on_workout_input(&mut self, workout_input: Option<String>) {
+    fn on_workout_input(&mut self, workout_input: Option<String>) -> Task<Message> {
         self.workout_input = workout_input.clone();
         self.update_operation_flags();
+
+        Task::none()
     }
 
-    fn on_add_workout(&mut self) {
+    fn on_add_workout(&mut self) -> Task<Message> {
         let input = match self.get_valid_input() {
-            None => return,
+            None => return Task::none(),
             Some(s) => s,
         };
 
@@ -152,16 +186,18 @@ impl AppState {
         self.workout_input = None;
         self.update_operation_flags();
         self.write_workouts_state();
+
+        Task::none()
     }
 
-    fn on_update_workout(&mut self) {
+    fn on_update_workout(&mut self) -> Task<Message> {
         let input = match self.get_valid_input() {
-            None => return,
+            None => return Task::none(),
             Some(s) => s,
         };
 
         let workout = match self.workout_selection.clone() {
-            None => return,
+            None => return Task::none(),
             Some(w) => w,
         };
 
@@ -170,25 +206,31 @@ impl AppState {
             self.update_operation_flags();
             self.write_workouts_state();
         }
+
+        Task::none()
     }
 
-    fn on_initiate_workout_deletion(&mut self) {
+    fn on_initiate_workout_deletion(&mut self) -> Task<Message> {
         self.show_confirmation = Some(ConfirmationTopic::WorkoutDeletion);
+
+        Task::none()
     }
 
-    fn on_initiate_clearance(&mut self) {
+    fn on_initiate_clearance(&mut self) -> Task<Message> {
         self.show_confirmation = Some(ConfirmationTopic::Clearance);
+
+        Task::none()
     }
 
-    fn on_move_workout_up(&mut self) {
+    fn on_move_workout_up(&mut self) -> Task<Message> {
         let workout = match self.workout_selection.clone() {
-            None => return,
+            None => return Task::none(),
             Some(w) => w,
         };
 
         let position = match self.get_position(workout.clone()) {
-            None => return,
-            Some(p) if p <= 0 => return,
+            None => return Task::none(),
+            Some(p) if p <= 0 => return Task::none(),
             Some(p) => p,
         };
 
@@ -196,17 +238,19 @@ impl AppState {
         self.workouts.insert(position - 1, removed);
         self.update_operation_flags();
         self.write_workouts_state();
+
+        Task::none()
     }
 
-    fn on_move_workout_down(&mut self) {
+    fn on_move_workout_down(&mut self) -> Task<Message> {
         let workout = match self.workout_selection.clone() {
-            None => return,
+            None => return Task::none(),
             Some(w) => w,
         };
 
         let position = match self.get_position(workout.clone()) {
-            None => return,
-            Some(p) if p >= self.workouts.iter().count() - 1 => return,
+            None => return Task::none(),
+            Some(p) if p >= self.workouts.iter().count() - 1 => return Task::none(),
             Some(p) => p,
         };
 
@@ -214,6 +258,28 @@ impl AppState {
         self.workouts.insert(position + 1, removed);
         self.update_operation_flags();
         self.write_workouts_state();
+
+        Task::none()
+    }
+
+    fn on_window_moved(&mut self, x: f32, y: f32) -> Task<Message> {
+        self.window_position = Some(Position::new(x, y));
+
+        Task::none()
+    }
+
+    fn on_window_close_request(&self) -> Task<Message> {
+        if let Some(position) = self.window_position.clone() {
+            let result = write_window_state(position);
+            if let Err(error) = result {
+                log_error(error.to_string()).ok();
+            }
+        }
+
+        match self.window_id {
+            None => std::process::exit(0),
+            Some(window_id) => window::close(window_id),
+        }
     }
 
     fn delete_workout(&mut self) {
@@ -343,6 +409,14 @@ impl AppState {
         }
     }
 
+    fn window_subscription(&self) -> Subscription<Message> {
+        event::listen_with(|event, _, _| match event {
+            Window(window::Event::Moved(p)) => Some(Message::WindowMoved(p.x, p.y)),
+            Window(window::Event::CloseRequested) => Some(Message::WindowCloseRequest),
+            _ => None,
+        })
+    }
+
     fn write_workouts_state(&mut self) {
         let result = write_workouts_state(WorkoutsState {
             index: self.workout_index,
@@ -357,6 +431,7 @@ impl AppState {
 
 #[derive(Debug, Clone)]
 enum Message {
+    WindowId(Option<Id>),
     NextWorkout,
     OpenSettings,
     CloseSettings,
@@ -369,6 +444,8 @@ enum Message {
     InitiateClearance,
     MoveWorkoutUp,
     MoveWorkoutDown,
+    WindowMoved(f32, f32),
+    WindowCloseRequest,
 }
 
 #[derive(Debug, Clone)]

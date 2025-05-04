@@ -1,5 +1,5 @@
 use crate::Message;
-use iced::widget::{center, container, mouse_area, opaque, Container, Stack};
+use iced::widget::{Container, Stack, center, container, mouse_area, opaque};
 use iced::{Background, Color, Element};
 use rand::Rng;
 
