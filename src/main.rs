@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod helper;
 mod persistence;
@@ -15,7 +15,6 @@ use crate::ui::confirmation_dialog::{
 use crate::ui::settings_page::{create_settings_page, SettingsViewModel};
 use crate::ui::{create_main_page, MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH};
 use bitflags::bitflags;
-use iced::window::Position::{Default, Specific};
 use iced::window::{Id, Settings};
 use iced::Event::Window;
 use iced::{event, window, Element, Point, Size, Subscription, Task};
@@ -34,15 +33,10 @@ fn main() -> iced::Result {
         .collect();
     let window_position = read_window_state();
     let mut app_state = AppState {
-        window_id: None,
         workout_index: workouts_state.index,
         workouts: workouts.clone(),
-        current_page: Page::Main,
-        show_confirmation: None,
-        workout_selection: None,
-        workout_input: None,
-        operation_flags: OperationFlags::empty(),
         window_position: window_position.clone(),
+        ..AppState::default()
     };
     app_state
         .operation_flags
@@ -51,7 +45,9 @@ fn main() -> iced::Result {
     iced::application("Workout Iterator", AppState::update, AppState::view)
         .window(Settings {
             size: Size::new(WINDOW_WIDTH, WINDOW_HEIGHT),
-            position: window_position.map_or(Default, |p| Specific(Point::from([p.x,p.y]))),
+            position: window_position.map_or(window::Position::Default, |p| {
+                window::Position::Specific(Point::from([p.x, p.y]))
+            }),
             icon: window::icon::from_file_data(ICON_BYTES, Some(ImageFormat::Ico)).ok(),
             exit_on_close_request: false,
             ..Settings::default()
@@ -82,6 +78,22 @@ struct AppState {
     workout_input: Option<String>,
     operation_flags: OperationFlags,
     window_position: Option<Position>,
+}
+
+impl Default for AppState {
+    fn default() -> AppState {
+        AppState {
+            window_id: None,
+            workout_index: 0,
+            workouts: vec![],
+            current_page: Page::Main,
+            show_confirmation: None,
+            workout_selection: None,
+            workout_input: None,
+            operation_flags: OperationFlags::empty(),
+            window_position: None,
+        }
+    }
 }
 
 impl AppState {
@@ -460,5 +472,36 @@ impl Workout {
             id: Uuid::new_v4(),
             text,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{AppState, Workout};
+
+    #[test]
+    fn test_has_unique_input_given_unique_input_should_be_true() {
+        let state = AppState {
+            workouts: vec![
+                Workout::new(String::from("workout1")),
+                Workout::new(String::from("workout2")),
+            ],
+            workout_input: Some(String::from("workout3")),
+            ..AppState::default()
+        };
+        assert!(state.has_unique_input())
+    }
+
+    #[test]
+    fn test_has_unique_input_given_existing_input_should_be_false() {
+        let state = AppState {
+            workouts: vec![
+                Workout::new(String::from("workout1")),
+                Workout::new(String::from("workout2")),
+            ],
+            workout_input: Some(String::from("workout2")),
+            ..AppState::default()
+        };
+        assert!(!state.has_unique_input())
     }
 }

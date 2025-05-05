@@ -139,7 +139,9 @@ fn read_window_json() -> Result<WindowState, Error> {
 fn validate_workouts_state(workouts_state: &WorkoutsState) -> Result<(), &'static str> {
     let count = workouts_state.workouts.iter().count() as i8;
     match workouts_state.index {
-        i if i < 0 || (count > 0 && i >= count) => Err("invalid workouts.json: index out of range"),
+        i if i < 0 || (count == 0 && i != 0) || (count > 0 && i >= count) => {
+            Err("invalid workouts.json: index out of range")
+        }
         _ => Ok(()),
     }
 }
@@ -148,5 +150,84 @@ fn validate_window_state(window_state: &WindowState) -> Result<(), &'static str>
     match window_state.position {
         Position { x, y } if x < 0.0 || y < 0.0 => Err("invalid window.json: negative position(s)"),
         _ => Ok(()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::persistence::{
+        validate_window_state, validate_workouts_state, Position, WindowState, WorkoutsState,
+    };
+
+    #[test]
+    fn test_validate_workouts_state_given_default_should_be_ok() {
+        let state = WorkoutsState::default();
+        assert!(validate_workouts_state(&state).is_ok())
+    }
+
+    #[test]
+    fn test_validate_workouts_state_given_index_in_range_should_be_ok() {
+        let state = WorkoutsState {
+            workouts: vec![String::from("workout1"), String::from("workout2")],
+            index: 1,
+        };
+        assert!(validate_workouts_state(&state).is_ok())
+    }
+
+    #[test]
+    fn test_validate_workouts_state_given_index_not_in_range_should_be_err() {
+        let state = WorkoutsState {
+            workouts: vec![String::from("workout1"), String::from("workout2")],
+            index: 2,
+        };
+        assert!(validate_workouts_state(&state).is_err())
+    }
+
+    #[test]
+    fn test_validate_workouts_state_given_negative_index_should_be_err() {
+        let state = WorkoutsState {
+            workouts: vec![String::from("workout1"), String::from("workout2")],
+            index: -1,
+        };
+        assert!(validate_workouts_state(&state).is_err())
+    }
+
+    #[test]
+    fn test_validate_workouts_state_given_empty_list_index_not_zero_should_be_err() {
+        let state = WorkoutsState {
+            workouts: vec![],
+            index: 1,
+        };
+        assert!(validate_workouts_state(&state).is_err())
+    }
+
+    #[test]
+    fn test_validate_window_state_given_default_should_be_ok() {
+        let state = WindowState::default();
+        assert!(validate_window_state(&state).is_ok())
+    }
+
+    #[test]
+    fn test_validate_window_state_given_valid_position_should_be_ok() {
+        let state = WindowState {
+            position: Position::new(1.0, 1.0),
+        };
+        assert!(validate_window_state(&state).is_ok())
+    }
+
+    #[test]
+    fn test_validate_window_state_given_negative_x_should_be_err() {
+        let state = WindowState {
+            position: Position::new(-1.0, 1.0),
+        };
+        assert!(validate_window_state(&state).is_err())
+    }
+
+    #[test]
+    fn test_validate_window_state_given_negative_y_should_be_err() {
+        let state = WindowState {
+            position: Position::new(1.0, -1.0),
+        };
+        assert!(validate_window_state(&state).is_err())
     }
 }
