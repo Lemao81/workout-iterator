@@ -6,18 +6,18 @@ mod ui;
 
 use crate::helper::modal;
 use crate::persistence::{
-    log_error, read_window_state, read_workouts_state, write_window_state, write_workouts_state, Position,
-    WorkoutsState,
+    Position, WorkoutsState, log_error, read_window_state, read_workouts_state, write_window_state,
+    write_workouts_state,
 };
 use crate::ui::confirmation_dialog::{
-    create_confirmation_dialog, ConfirmationPayload, ConfirmationTopic,
+    ConfirmationPayload, ConfirmationTopic, create_confirmation_dialog,
 };
-use crate::ui::settings_page::{create_settings_page, SettingsViewModel};
-use crate::ui::{create_main_page, MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::ui::settings_page::{SettingsViewModel, create_settings_page};
+use crate::ui::{MainViewModel, Page, WINDOW_HEIGHT, WINDOW_WIDTH, create_main_page};
 use bitflags::bitflags;
-use iced::window::{Id, Settings};
 use iced::Event::Window;
-use iced::{event, window, Element, Point, Size, Subscription, Task};
+use iced::window::{Id, Settings};
+use iced::{Element, Point, Size, Subscription, Task, event, window};
 use image::ImageFormat;
 use std::cmp::max;
 use uuid::Uuid;
@@ -489,6 +489,7 @@ mod tests {
             workout_input: Some(String::from("workout3")),
             ..AppState::default()
         };
+
         assert!(state.has_unique_input())
     }
 
@@ -502,6 +503,49 @@ mod tests {
             workout_input: Some(String::from("workout2")),
             ..AppState::default()
         };
+
         assert!(!state.has_unique_input())
+    }
+
+    #[test]
+    fn test_get_valid_input_given_valid_input_should_return_input() {
+        let mut state = AppState {
+            workouts: vec![
+                Workout::new(String::from("workout1")),
+                Workout::new(String::from("workout3")),
+            ],
+            workout_input: Some(String::from("workout4")),
+            ..AppState::default()
+        };
+
+        assert_eq!(Some(String::from("workout4")), state.get_valid_input())
+    }
+
+    #[test]
+    fn test_get_valid_input_given_empty_input_should_return_none() {
+        let mut state = AppState {
+            workouts: vec![
+                Workout::new(String::from("workout1")),
+                Workout::new(String::from("workout2")),
+            ],
+            workout_input: Some(String::from("")),
+            ..AppState::default()
+        };
+
+        assert_eq!(None, state.get_valid_input())
+    }
+
+    #[test]
+    fn test_get_valid_input_given_existing_input_should_return_none() {
+        let mut state = AppState {
+            workouts: vec![
+                Workout::new(String::from("workout1")),
+                Workout::new(String::from("workout2")),
+            ],
+            workout_input: Some(String::from("workout1")),
+            ..AppState::default()
+        };
+
+        assert_eq!(None, state.get_valid_input())
     }
 }

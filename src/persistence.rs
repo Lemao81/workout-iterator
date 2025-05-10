@@ -156,12 +156,13 @@ fn validate_window_state(window_state: &WindowState) -> Result<(), &'static str>
 #[cfg(test)]
 mod tests {
     use crate::persistence::{
-        validate_window_state, validate_workouts_state, Position, WindowState, WorkoutsState,
+        Position, WindowState, WorkoutsState, validate_window_state, validate_workouts_state,
     };
 
     #[test]
     fn test_validate_workouts_state_given_default_should_be_ok() {
         let state = WorkoutsState::default();
+
         assert!(validate_workouts_state(&state).is_ok())
     }
 
@@ -171,6 +172,7 @@ mod tests {
             workouts: vec![String::from("workout1"), String::from("workout2")],
             index: 1,
         };
+
         assert!(validate_workouts_state(&state).is_ok())
     }
 
@@ -180,6 +182,7 @@ mod tests {
             workouts: vec![String::from("workout1"), String::from("workout2")],
             index: 2,
         };
+
         assert!(validate_workouts_state(&state).is_err())
     }
 
@@ -189,6 +192,7 @@ mod tests {
             workouts: vec![String::from("workout1"), String::from("workout2")],
             index: -1,
         };
+
         assert!(validate_workouts_state(&state).is_err())
     }
 
@@ -198,12 +202,14 @@ mod tests {
             workouts: vec![],
             index: 1,
         };
+
         assert!(validate_workouts_state(&state).is_err())
     }
 
     #[test]
     fn test_validate_window_state_given_default_should_be_ok() {
         let state = WindowState::default();
+
         assert!(validate_window_state(&state).is_ok())
     }
 
@@ -212,6 +218,7 @@ mod tests {
         let state = WindowState {
             position: Position::new(1.0, 1.0),
         };
+
         assert!(validate_window_state(&state).is_ok())
     }
 
@@ -220,6 +227,7 @@ mod tests {
         let state = WindowState {
             position: Position::new(-1.0, 1.0),
         };
+
         assert!(validate_window_state(&state).is_err())
     }
 
@@ -228,6 +236,7 @@ mod tests {
         let state = WindowState {
             position: Position::new(1.0, -1.0),
         };
+
         assert!(validate_window_state(&state).is_err())
     }
 }
