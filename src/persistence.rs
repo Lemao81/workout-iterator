@@ -4,9 +4,9 @@ use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{Error, Write};
 
-const WORKOUTS_JSON: &'static str = "workouts.json";
-const WINDOW_JSON: &'static str = "window.json";
-const ERROR_LOG: &'static str = "error.log";
+const WORKOUTS_JSON: &str = "workouts.json";
+const WINDOW_JSON: &str = "window.json";
+const ERROR_LOG: &str = "error.log";
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct WorkoutsState {

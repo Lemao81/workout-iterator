@@ -29,7 +29,7 @@ fn main() -> iced::Result {
     let workouts: Vec<_> = workouts_state
         .workouts
         .into_iter()
-        .map(|s| Workout::new(s))
+        .map(Workout::new)
         .collect();
     let window_position = read_window_state();
     let mut app_state = AppState {
@@ -40,7 +40,7 @@ fn main() -> iced::Result {
     };
     app_state
         .operation_flags
-        .set(OperationFlags::CanClear, workouts.len() > 0);
+        .set(OperationFlags::CanClear, !workouts.is_empty());
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
         .window(Settings {
@@ -242,7 +242,7 @@ impl AppState {
 
         let position = match self.get_position(workout.clone()) {
             None => return Task::none(),
-            Some(p) if p == 0 => return Task::none(),
+            Some(0) => return Task::none(),
             Some(p) => p,
         };
 
@@ -345,20 +345,20 @@ impl AppState {
         self.operation_flags
             .set(OperationFlags::CanDelete, self.workout_selection.is_some());
         self.operation_flags
-            .set(OperationFlags::CanClear, self.workouts.len() > 0);
+            .set(OperationFlags::CanClear, !self.workouts.is_empty());
         self.operation_flags.set(
             OperationFlags::CanMoveUp,
             self.workout_selection
                 .clone()
                 .and_then(|w| self.get_position(w))
-                .map_or(false, |p| p > 0),
+                .is_some_and(|p| p > 0),
         );
         self.operation_flags.set(
             OperationFlags::CanMoveDown,
             self.workout_selection
                 .clone()
                 .and_then(|w| self.get_position(w))
-                .map_or(false, |p| p < self.workouts.len() - 1),
+                .is_some_and(|p| p < self.workouts.len() - 1),
         );
     }
 
@@ -396,8 +396,7 @@ impl AppState {
     fn create_main_view_model(&self) -> MainViewModel {
         let workout = self
             .workouts
-            .iter()
-            .nth(self.workout_index as usize)
+            .get(self.workout_index as usize)
             .map_or("<empty>".to_owned(), |w| w.text.clone());
         let total = self.workouts.len();
         let has_next = total > 1;

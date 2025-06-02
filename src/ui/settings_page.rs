@@ -51,8 +51,8 @@ fn create_workouts_list<'a>(
             Column::new(),
             |column: Column<'a, Message>, workout: Workout| {
                 let is_selected = workout_selection
-                    .clone()
-                    .map_or(false, |w| w.id == workout.id);
+                    .as_ref()
+                    .is_some_and(|w| w.id == workout.id);
                 let button = button(text(workout.text.clone()))
                     .width(Length::Fill)
                     .style(move |_, _| get_list_item_style(is_selected))
