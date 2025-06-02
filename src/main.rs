@@ -242,7 +242,7 @@ impl AppState {
 
         let position = match self.get_position(workout.clone()) {
             None => return Task::none(),
-            Some(p) if p <= 0 => return Task::none(),
+            Some(p) if p == 0 => return Task::none(),
             Some(p) => p,
         };
 
@@ -374,7 +374,10 @@ impl AppState {
 
         if let Some(topic) = self.show_confirmation.clone() {
             let message = match topic {
-                ConfirmationTopic::WorkoutDeletion => None,
+                ConfirmationTopic::WorkoutDeletion => self
+                    .workout_selection
+                    .clone()
+                    .map(|w| format!("Removing '{}' workout. Are you sure?", w.text)),
                 ConfirmationTopic::Clearance => {
                     Some("Removing all workouts. Are you sure?".to_owned())
                 }
