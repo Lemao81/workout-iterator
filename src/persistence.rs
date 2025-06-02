@@ -137,7 +137,7 @@ fn read_window_json() -> Result<WindowState, Error> {
 }
 
 fn validate_workouts_state(workouts_state: &WorkoutsState) -> Result<(), &'static str> {
-    let count = workouts_state.workouts.iter().count() as i8;
+    let count = workouts_state.workouts.len() as i8;
     match workouts_state.index {
         i if i < 0 || (count == 0 && i != 0) || (count > 0 && i >= count) => {
             Err("invalid workouts.json: index out of range")

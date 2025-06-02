@@ -40,7 +40,7 @@ fn main() -> iced::Result {
     };
     app_state
         .operation_flags
-        .set(OperationFlags::CanClear, workouts.iter().count() > 0);
+        .set(OperationFlags::CanClear, workouts.len() > 0);
 
     iced::application("Workout Iterator", AppState::update, AppState::view)
         .window(Settings {
@@ -124,7 +124,7 @@ impl AppState {
     }
 
     fn on_next_workout(&mut self) -> Task<Message> {
-        let count = self.workouts.iter().count() as i8;
+        let count = self.workouts.len() as i8;
         if count > 0 {
             self.workout_index = (self.workout_index + 1) % count;
             self.write_workouts_state();
@@ -262,7 +262,7 @@ impl AppState {
 
         let position = match self.get_position(workout.clone()) {
             None => return Task::none(),
-            Some(p) if p >= self.workouts.iter().count() - 1 => return Task::none(),
+            Some(p) if p >= self.workouts.len() - 1 => return Task::none(),
             Some(p) => p,
         };
 
@@ -345,7 +345,7 @@ impl AppState {
         self.operation_flags
             .set(OperationFlags::CanDelete, self.workout_selection.is_some());
         self.operation_flags
-            .set(OperationFlags::CanClear, self.workouts.iter().count() > 0);
+            .set(OperationFlags::CanClear, self.workouts.len() > 0);
         self.operation_flags.set(
             OperationFlags::CanMoveUp,
             self.workout_selection
@@ -358,7 +358,7 @@ impl AppState {
             self.workout_selection
                 .clone()
                 .and_then(|w| self.get_position(w))
-                .map_or(false, |p| p < self.workouts.iter().count() - 1),
+                .map_or(false, |p| p < self.workouts.len() - 1),
         );
     }
 
@@ -396,7 +396,7 @@ impl AppState {
             .iter()
             .nth(self.workout_index as usize)
             .map_or("<empty>".to_owned(), |w| w.text.clone());
-        let total = self.workouts.iter().count();
+        let total = self.workouts.len();
         let has_next = total > 1;
         let selected_number = if total == 0 {
             0
